@@ -16,7 +16,7 @@ murd.BEDROOM = new murd.Bedroom();
 
 murd.Toilet = function() {
   this.NAME = 'toilet';
-  this.TITLE = 'the toilet';
+  this.TITLE = 'the filthy toilet';
 };
 murd.Toilet.prototype = new engine.Room();
 murd.Toilet.prototype.Description = function(world) {
