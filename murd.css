@@ -1,0 +1,15 @@
+#screen {
+  width: 700px;
+  height: 700px;
+  border: 1px solid black;
+  overflow: scroll;
+}
+
+#input {
+  width: 700px;
+  border: 1px solid black;
+}
+
+#inputbox {
+  width: 696px;
+}

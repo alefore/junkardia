@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Take 1</title>
+    <link rel="stylesheet" type="text/css" href="murd.css">
+    <script type="application/javascript" src="engine.js"></script>
+    <script type="application/javascript" src="murd.js"></script>
+    <script type="application/javascript">
+      function onload() {
+        eng = new engine.Engine(
+            document.getElementById('screen'),
+            document.getElementById('inputbox'));
+        game = new murd.Game();
+        eng.Start(game);
+      }
+    </script>
+  </head>
+  <body onload="javascript:onload();">
+    <div id="screen"></div>
+    <div id="input">
+      <input id="inputbox" type="text">
+    </div>
+  </body>
+</html>
