@@ -1,6 +1,8 @@
 var murd = {};
 
-murd.flags = { 'alarmClockOff': 'alarmClockOff' };
+murd.flags = {};
+murd.flags.alarmClockOff = 'alarmClockOff';
+murd.flags.showered = 'showered';
 
 murd.Bedroom = function() {
   this.NAME = 'bedroom';
@@ -13,35 +15,47 @@ murd.Bedroom.prototype.Description = function(world) {
     description += " The annoying alarm clock is beeping loudly."
   }
   description +=
-      " Two doors are here, one leads to the toilet and one to the street.";
+      " Two doors are here, one leads to the restroom and one to the street.";
   return description;
 };
 murd.Bedroom.prototype.Exits = function(world) {
-  return {'toilet': true, 'street': true}
+  return {'restroom': true, 'street': true}
 };
 murd.BEDROOM = new murd.Bedroom();
 
-murd.Toilet = function() {
-  this.NAME = 'toilet';
-  this.TITLE = 'the filthy toilet';
+murd.flags.restroomWindowOpen = 'restroomWindowOpen';
+murd.Restroom = function() {
+  this.NAME = 'restroom';
+  this.TITLE = 'the restroom';
 };
-murd.Toilet.prototype = new engine.Room();
-murd.Toilet.prototype.Description = function(world) {
-  return 'This is cleaner than your bedroom.';
+murd.Restroom.prototype = new engine.Room();
+murd.Restroom.prototype.Description = function(world) {
+  var description = "The blue tiles in the restroom are a bit cold.";
+  var isShowerWet = world.GetFlag(murd.flags.showered) ? " wet" : "";
+  if (world.GetFlag(murd.flags.restroomWindowOpen)) {
+    description +=
+        " A refreshing current of fresh air blows in from the open window."
+        + " There's a" + isShowerWet + " shower here.";
+  } else {
+    description +=
+        " The restroom stinks a bit. There's a window and a" + isShowerWet
+        + " shower here.";
+  }
+  return description;
 };
-murd.Toilet.prototype.CanEnter = function(world) {
-  if (!world.GetFlag('toiletDoorOpen')) {
+murd.Restroom.prototype.CanEnter = function(world) {
+  if (!world.GetFlag('restroomDoorOpen')) {
     world.Print('The door is closed.');
     return false;
   }
-   world.Print('You enter the toilet.<br>' + 
-       'A foul smell penetrates your nostrils.');
+   world.Print('You enter the restroom.<br>'
+               + 'A foul smell penetrates your nostrils.');
    return true;
 };
-murd.Toilet.prototype.Exits = function(world) {
+murd.Restroom.prototype.Exits = function(world) {
   return {'bedroom': true}
 };
-murd.TOILET = new murd.Toilet();
+murd.RESTROOM = new murd.Restroom();
 
 murd.Street = function() {
   this.NAME = 'street';
@@ -54,6 +68,11 @@ murd.Street.prototype.Description = function(world) {
 murd.Street.prototype.CanEnter = function(world) {
   if (!world.GetFlag(murd.flags.alarmClockOff)) {
     world.Print('You should turn that stupid alarm clock off first.');
+    return false;
+  }
+  if (!world.GetFlag(murd.flags.showered)) {
+    world.Print(
+        "Hmm, you should probably take a shower first. You smell a bit.");
     return false;
   }
   world.Print(
@@ -80,19 +99,42 @@ murd.Game = function() {
 };
 murd.Game.prototype = new engine.Game();
 murd.Game.prototype.InitState = function(world) {
-  world.SetFlag('toiletDoorOpen', false);
+  world.SetFlag('restroomDoorOpen', false);
 };
 
 murd.Game.prototype.HandleAction = function(world, verb, words) {
   if (verb == 'open') {
-    if (words[0] !== 'door') {
+    if (words[0] == 'door') {
+      if (!('restroom' in world.location.Exits())) {
+        return false;
+      }
+      world.SetFlag('restroomDoorOpen', true);
+      world.Print('Ok');
+      return true;
+    }
+    if (words[0] == 'window') {
+      if (world.location != murd.RESTROOM) {
+        return false;
+      }
+      world.SetFlag(murd.flags.restroomWindowOpen, true);
+      world.Print("You open that window. Ahh, a fresh breeze of Swiss air!");
+      return true;
+    }
+    return false;
+  }
+
+  if (verb == 'use') {
+    if (words[0] !== 'shower') {
       return false;
     }
-    if (!('toilet' in world.location.Exits())) {
+    if (world.location != murd.RESTROOM) {
       return false;
     }
-    world.SetFlag('toiletDoorOpen', true);
-    world.Print('Ok');
+    world.SetFlag(murd.flags.showered, true);
+    world.Print(
+        "You take your clothes off and take a quick shower. The water feels "
+        + "refreshing. After showering, you dry yourself with a towel and put "
+        + "on your banker suit.");
     return true;
   }
 
@@ -112,7 +154,7 @@ murd.Game.prototype.HandleAction = function(world, verb, words) {
 
 murd.Game.prototype.ROOMS = [
   murd.BEDROOM,
-  murd.TOILET,
+  murd.RESTROOM,
   murd.STREET,
   murd.AIRPORT,
 ];
