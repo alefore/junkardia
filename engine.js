@@ -62,6 +62,10 @@ engine.World.prototype.Enter = function(room) {
     return;
   }
 
+  if (!this.location.CanLeave(this, room)) {
+    return;
+  }
+
   if (!room.CanEnter(this)) {
     return;
   }
@@ -133,6 +137,10 @@ engine.Room.prototype.Init = function(world) {
 
 engine.Room.prototype.Description = function(world) {
   return '';
+};
+
+engine.Room.prototype.CanLeave = function(world, toRoom) {
+  return true;
 };
 
 engine.Room.prototype.CanEnter = function(world) {

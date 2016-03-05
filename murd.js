@@ -8,14 +8,26 @@ murd.BEDROOM = engine.MakeRoom({
   NAME: 'bedroom',
   TITLE: 'your bedroom',
 
+  Init: function() {
+    this.alarmClockOn = true;
+  },
+
   Description: function(world) {
     var description = "Your bedroom is a bit messy.";
-    if (!world.GetFlag('alarmClockOff')) {
+    if (this.alarmClockOn) {
       description += " The annoying alarm clock is beeping loudly."
     }
     description +=
         " Two doors are here, one leads to the restroom and one to the street.";
     return description;
+  },
+
+  CanLeave: function(world, toRoom) {
+    if (this.alarmClockOn && toRoom == murd.STREET) {
+      world.Print('You should turn that stupid alarm clock off first.');
+      return false;
+    }
+    return true;
   },
 
   Exits: function(world) {
@@ -63,10 +75,6 @@ murd.STREET = engine.MakeRoom({
     return "There's a small park in front of your apartment (bedroom).";
   },
   CanEnter: function(world) {
-    if (!world.GetFlag(murd.flags.alarmClockOff)) {
-      world.Print('You should turn that stupid alarm clock off first.');
-      return false;
-    }
     if (!world.GetFlag(murd.flags.showered)) {
       world.Print(
           "Hmm, you should probably take a shower first. You smell a bit.");
@@ -140,7 +148,7 @@ murd.Game.prototype.HandleAction = function(world, verb, words) {
     if (world.location != murd.BEDROOM) {
       return false;
     }
-    world.SetFlag(murd.flags.alarmClockOff, true);
+    murd.BEDROOM.alarmClockOn = false;
     world.Print('Ahh, finally a bit of peace.');
     return true;
   }
