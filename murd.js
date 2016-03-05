@@ -35,15 +35,18 @@ murd.BEDROOM = engine.MakeRoom({
   },
 });
 
-murd.flags.restroomWindowOpen = 'restroomWindowOpen';
 murd.RESTROOM = engine.MakeRoom({
   NAME: 'restroom',
   TITLE: 'the restroom',
 
+  Init: function() {
+    this.windowOpen = false;
+  },
+
   Description: function(world) {
     var description = "The blue tiles in the restroom are a bit cold.";
     var isShowerWet = world.GetFlag(murd.flags.showered) ? " wet" : "";
-    if (world.GetFlag(murd.flags.restroomWindowOpen)) {
+    if (this.windowOpen) {
       description +=
           " A refreshing current of fresh air blows in from the open window."
           + " There's a" + isShowerWet + " shower here.";
@@ -59,8 +62,12 @@ murd.RESTROOM = engine.MakeRoom({
       world.Print('The door is closed.');
       return false;
     }
-    world.Print('You enter the restroom.<br>'
-                + 'A foul smell penetrates your nostrils.');
+    world.Print('You enter the restroom.');
+    if (this.windowOpen) {
+      world.Print('A cold draft of Swiss air makes you shiver.');
+    } else {
+      world.Print('A foul smell penetrates your nostrils.');
+    }
     return true;
   },
   Exits: function(world) {
@@ -119,7 +126,7 @@ murd.Game.prototype.HandleAction = function(world, verb, words) {
       if (world.location != murd.RESTROOM) {
         return false;
       }
-      world.SetFlag(murd.flags.restroomWindowOpen, true);
+      murd.RESTROOM.windowOpen = true;
       world.Print("You open that window. Ahh, a fresh breeze of Swiss air!");
       return true;
     }
