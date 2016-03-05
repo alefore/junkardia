@@ -23,12 +23,18 @@ murd.BEDROOM = engine.MakeRoom({
   },
 
   CanLeave: function(world, toRoom) {
-    if (this.alarmClockOn && toRoom == murd.STREET) {
-      world.Print('You should turn that stupid alarm clock off first.');
-      return false;
-    }
-    return true;
-  },
+    if (toRoom == murd.STREET) {
+      if (this.alarmClockOn) {
+        world.Print('You should turn that stupid alarm clock off first.');
+        return false;
+      }
+      if (!world.GetFlag(murd.flags.showered)) {
+        world.Print(
+            "Hmm, you should probably take a shower first. You smell a bit.");
+        return false;
+      }
+      return true;
+   },
 
   Exits: function(world) {
     return {'restroom': true, 'street': true}
@@ -82,11 +88,6 @@ murd.STREET = engine.MakeRoom({
     return "There's a small park in front of your apartment (bedroom).";
   },
   CanEnter: function(world) {
-    if (!world.GetFlag(murd.flags.showered)) {
-      world.Print(
-          "Hmm, you should probably take a shower first. You smell a bit.");
-      return false;
-    }
     world.Print(
         "You unlock the door and take the stairs down. The sun is shinning, "
         + "it's a beautiful day.");
