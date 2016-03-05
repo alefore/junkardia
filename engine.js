@@ -229,6 +229,11 @@ engine.Engine.prototype.Action = function() {
     return;
   } 
   var action = this.input_.value;
+  this.ProcessAction(action);
+  this.input_.value = '';
+};
+
+engine.Engine.prototype.ProcessAction = function(action) {
   this.Print('');
   this.Print('> ' + action);
   var words = action.toLowerCase().split(/\s+/);
@@ -240,7 +245,6 @@ engine.Engine.prototype.Action = function() {
       this.game.UnknownAction(this.world, action);
     }
   }
-  this.input_.value = '';
 };
 
 engine.Engine.prototype.ACTIONS = {
