@@ -32,8 +32,9 @@ murd.BEDROOM = engine.MakeRoom({
             "Hmm, you should probably take a shower first. You smell a bit.");
         return false;
       }
-      return true;
-   },
+    }
+    return true;
+  },
 
   Exits: function(world) {
     return {'restroom': true, 'street': true}
@@ -57,7 +58,7 @@ murd.RESTROOM = engine.MakeRoom({
           + " There's a" + isShowerWet + " shower here.";
     } else {
       description +=
-          " The restroom stinks a bit. There's a window and a" + isShowerWet
+          " The restroom smells a bit. There's a window and a" + isShowerWet
           + " shower here.";
     }
     return description;
@@ -69,9 +70,10 @@ murd.RESTROOM = engine.MakeRoom({
     }
     world.Print('You enter the restroom.');
     if (this.windowOpen) {
-      world.Print('A cold draft of Swiss air makes you shiver.');
+      world.Print("A cold draft of Swiss air, straight from the mountains, "
+                  + "makes you shiver.");
     } else {
-      world.Print('A foul smell penetrates your nostrils.');
+      world.Print("The restroom smells a bit.");
     }
     return true;
   },
