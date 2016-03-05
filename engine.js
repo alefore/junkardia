@@ -273,9 +273,13 @@ engine.Engine.prototype.KeyDown = function(e) {
       return false;
     }
   } else if (e.keyCode === 40) {
-    if (this.actionIndex < this.actionHistory.length - 1) {
+    if (this.actionIndex < this.actionHistory.length) {
       this.actionIndex++;
-      this.input_.value = this.actionHistory[this.actionIndex];
+      if (this.actionIndex < this.actionHistory.length) {
+        this.input_.value = this.actionHistory[this.actionIndex];
+      } else {
+        this.input_.value = '';
+      }
       var len = this.input_.value.length
       this.input_.selectionStart = this.input_.selectionEnd = len;
       e.stopPropagation();
