@@ -1,7 +1,6 @@
 var murd = {};
 
 murd.flags = {};
-murd.flags.alarmClockOff = 'alarmClockOff';
 murd.flags.showered = 'showered';
 
 murd.BEDROOM = engine.MakeRoom({
