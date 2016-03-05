@@ -26,10 +26,8 @@ murd.BEDROOM = engine.MakeRoom({
     for (var i in objects) {
       var obj = objects[i];
       if (obj == murd.WALLET) {
-        world.Print('Your wallet lies on your nightstand.');
-      } else if (obj == murd.MACGUFFIN) {
         if (!this.alarmClockOn) {
-          world.Print('You see something you haven\'t noticed before...');
+          world.Print("Your wallet lies on your nightstand.");
         }
       } else {
         out.push(obj)
@@ -300,6 +298,13 @@ murd.WALLET = engine.MakeObject({
   Description: function(world) {
     return 'You have $23, a trains pass, and a credit card.'
   },
+  CanGet: function(world) {
+    if (murd.BEDROOM.alarmClockOn) {
+      world.Print('I don\'t know what you are talking about...');
+      return false;
+    }
+    return true;
+  },
 });
 
 murd.LINT = engine.MakeObject({
@@ -308,23 +313,6 @@ murd.LINT = engine.MakeObject({
   INITIAL_LOCATION: null,
   Description: function(world) {
     return 'Maybe you should consider buying new pants.'
-  },
-});
-
-murd.MACGUFFIN = engine.MakeObject({
-  NAME: 'macguffin',
-  TITLE: 'something indescriptive, but which looks important',
-  INITIAL_LOCATION: murd.BEDROOM,
-  Description: function(world) {
-    return 'You can\'t quite tell what it is, but something makes you think ' +
-      'that people would kill for it.'
-  },
-  CanGet: function(world) {
-    if (murd.BEDROOM.alarmClockOn) {
-      world.Print('I don\'t know what you are talking about...');
-      return false;
-    }
-    return true;
   },
 });
 
@@ -415,7 +403,6 @@ murd.Game.prototype.ROOMS = [
 ];
 murd.Game.prototype.OBJECTS = [
   murd.WALLET,
-  murd.MACGUFFIN,
   murd.LINT,
   murd.COMPUTER,
 ];
