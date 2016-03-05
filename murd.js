@@ -91,9 +91,13 @@ murd.STREET = engine.MakeRoom({
            + "bedroom, to the local bar, or to the wiedikon train station.";
   },
   CanEnter: function(world) {
-    world.Print(
-        "You unlock the door and take the stairs down. The sun is shinning, "
-        + "it's a beautiful day.");
+    if (world.location == murd.BEDROOM) {
+      world.Print(
+          "You unlock the door and take the stairs down. The sun is shinning, "
+          + "it's a beautiful day.");
+    } else {
+      world.Print("The sun is shinning, it's a beautiful day.");
+    }
     return true;
   },
   Exits: function(world) {
@@ -149,7 +153,10 @@ murd.WIEDIKON = engine.MakeRoom({
   },
   CanLeave: function(world, toRoom) {
     if (toRoom == murd.ENGE) {
-      return true;
+      return true;  // That's where we want him to go.
+    }
+    if (toRoom == murd.STREET) {
+      return true;  // Okay, why not.
     }
     world.Print(
         "You don't have time for that: you need to get to work soon! Take a "
@@ -157,7 +164,7 @@ murd.WIEDIKON = engine.MakeRoom({
     return false;
   },
   Exits: function(world) {
-    return ExitsTrainLines(murd.WIEDIKON, {});
+    return ExitsTrainLines(murd.WIEDIKON, {'street': true});
   }
 });
 
