@@ -382,6 +382,10 @@ murd.Game.prototype.HandleAction = function(world, verb, words) {
     if (world.location != murd.BEDROOM) {
       return false;
     }
+    if (!murd.BEDROOM.alarmClockOn) {
+      world.Print("Eh? The alarm clock is already off.");
+      return true;
+    }
     murd.BEDROOM.alarmClockOn = false;
     world.Print('Ahh, finally a bit of peace.');
     return true;
