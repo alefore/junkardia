@@ -40,7 +40,7 @@ engine.UseAction = function(world, words) {
     if (onWhat != null) {
       if (onWhat.location != world.INVENTORY &&
           onWhat.location != world.location) {
-        world.NotHere(obj);
+        world.NotHere(onWhat);
         return
       }
     }
