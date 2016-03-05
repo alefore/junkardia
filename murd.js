@@ -96,10 +96,10 @@ murd.RESTROOM = engine.MakeRoom({
     return {'bedroom': true}
   },
   HandleAction: function(world, verb, words) {
-    if (verb != 'use' && verb != 'take') {
+    if (verb != 'use' && verb != 'take' && verb != 'shower') {
       return false
     }
-    if (words[0] !== 'shower') {
+    if (words[0] !== 'shower' && verb != 'shower') {
       return false;
     }
     if (world.GetFlag(murd.flags.showered)) {
