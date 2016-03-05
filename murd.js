@@ -108,13 +108,30 @@ murd.STREET = engine.MakeRoom({
 murd.BAR = engine.MakeRoom({
   NAME: 'bar',
   TITLE: 'the bar',
+
+  Init: function() {
+    this.attempts = 0;
+  },
+
   Description: function(world) {},
   CanEnter: function(world) {
-    world.Print(
+    var description =
         "The bar is currently closed. It'll only open in the afternoon.<br>"
-        + "You knock on the door repeatedly, but nobody opens. One woman walks "
-        + "by, shaking her head and muttering something in Swiss German, "
-        + "giving you a look of disapproval.");
+        + "You knock on the door repeatedly, but nobody opens.";
+    if (this.attempts > 3) {
+      description +=
+          " You should probably head to Wiedikon and go to work. "
+          + " You can come back tonight.";
+      if (this.attempts > 5) {
+        description += " Don't let anybody say you're an alcoholic.";
+      }
+    } else if (this.attempts == 0) {
+      description +=
+          " One old lady walks by, shaking her head and muttering something in "
+          + "Swiss German, giving you a look of disapproval.";
+    }
+    world.Print(description);
+    this.attempts ++;
     return false;
   },
 });
