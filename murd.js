@@ -328,6 +328,20 @@ murd.MACGUFFIN = engine.MakeObject({
   },
 });
 
+murd.COMPUTER = engine.MakeObject({
+  NAME: 'computer',
+  TITLE: 'your old computer',
+  INITIAL_LOCATION: murd.OFFICE,
+  Description: function(world) {
+    return "An old computer running Windows 98. You fight with spreadsheets "
+           + "here all day.";
+  },
+  CanGet: function(world) {
+    world.Print("It's too heavy. What would you do with it anyway?");
+    return false;
+  }
+});
+
 murd.Game = function() {
   this.START_LOCATION = murd.BEDROOM;
   this.INTRO = 'The game is afoot.<br>You are in your bedroom.'
@@ -403,4 +417,5 @@ murd.Game.prototype.OBJECTS = [
   murd.WALLET,
   murd.MACGUFFIN,
   murd.LINT,
+  murd.COMPUTER,
 ];
