@@ -186,11 +186,17 @@ murd.WIEDIKON = engine.MakeRoom({
     return true;
   },
   CanLeave: function(world, toRoom) {
-    if (toRoom == murd.ENGE) {
-      return true;  // That's where we want him to go.
-    }
     if (toRoom == murd.STREET) {
       return true;  // Okay, why not.
+    }
+    if (toRoom == murd.ENGE) {
+      if (world.INVENTORY.objects.indexOf(murd.WALLET) == -1) {
+        world.Print(
+            "Oh, dang: looks like you forgot your wallet, which has your "
+            + "train pass.");
+        return false;
+      }
+      return true;  // That's where we want him to go.
     }
     world.Print(
         "You don't have time for that: you need to get to work soon! Take a "
@@ -292,7 +298,7 @@ murd.WALLET = engine.MakeObject({
   TITLE: 'your wallet',
   INITIAL_LOCATION: murd.BEDROOM,
   Description: function(world) {
-    return 'You have $23 and a credit card.'
+    return 'You have $23, a trains pass, and a credit card.'
   },
 });
 
