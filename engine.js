@@ -280,22 +280,27 @@ engine.Engine.prototype.ProcessAction = function(action) {
   }
 };
 
-engine.Room = function() {};
-
-engine.Room.prototype.NAME = null;
-engine.Room.prototype.TITLE = null;
-
-engine.Room.prototype.ProcessAction = function(action, world) {
-  return false;
-};
-
-engine.Room.prototype.Init = function(world) {
-};
-
-engine.Room.prototype.Description = function(world) {
+engine.Entity = function() {};
+engine.Entity.prototype.NAME = null;
+engine.Entity.prototype.TITLE = null;
+engine.Entity.prototype.Init = function(world) {};
+engine.Entity.prototype.Description = function(world) {
   return '';
 };
 
+engine.MakeEntity = function(superclass, data) {
+  newClass = function() {
+    this.Init();
+  };
+  newClass.prototype = new superclass();
+  for (key in data) {
+    newClass.prototype[key] = data[key];
+  }
+  return new newClass();
+};
+
+engine.Room = function() {};
+engine.Room.prototype = new engine.Entity();
 engine.Room.prototype.CanLeave = function(world, toRoom) {
   return true;
 };
@@ -312,24 +317,12 @@ engine.Room.prototype.DescribeObjects = function(world, objects) {
 };
 
 engine.MakeRoom = function(data) {
-  newRoomClass = function() {
-    this.Init();
-  };
-  newRoomClass.prototype = new engine.Room();
-  for (key in data) {
-    newRoomClass.prototype[key] = data[key];
-  }
-  return new newRoomClass();
+  return engine.MakeEntity(engine.Room, data);
 };
 
 engine.Object = function() {};
-engine.Object.NAME = null;
-engine.Object.TITLE= null;
-engine.Object.INITIAL_LOCATION = null;
-engine.Object.prototype.Init = function() {};
-engine.Object.prototype.Description = function(world) {
-  return '';
-};
+engine.Object.prototype = new engine.Entity();
+engine.Object.prototype.INITIAL_LOCATION = null;
 engine.Object.prototype.CanGet = function(world) {
   return true;
 };
@@ -337,14 +330,7 @@ engine.Object.prototype.Use = function(world, onWhat) {
   world.Print('I don\'t know how to use ' + this.TITLE + '.');
 };
 engine.MakeObject = function(data) {
-  newObjectClass = function() {
-    this.Init();
-  }
-  newObjectClass.prototype = new engine.Object();
-  for (key in data) {
-    newObjectClass.prototype[key] = data[key];
-  }
-  return new newObjectClass();
+  return engine.MakeEntity(engine.Object, data);
 };
 
 engine.Inventory = function() {
