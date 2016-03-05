@@ -314,6 +314,20 @@ murd.LINT = engine.MakeObject({
   Description: function(world) {
     return 'Maybe you should consider buying new pants.'
   },
+  Use: function(world, onWhat) {
+    if (onWhat == murd.WALLET) {
+      if (murd.WALLET.location != world.INVENTORY) {
+        world.NotHave(onWhat);
+        return;
+      }
+      world.Print(
+          'You smear the lint on your wallet for no particular reason. ' + 
+          'The particles dissolve into oblivion.');
+      world.Destroy(this);
+    } else {
+      world.Print('What for?');
+    }
+  },
 });
 
 murd.COMPUTER = engine.MakeObject({

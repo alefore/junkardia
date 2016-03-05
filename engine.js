@@ -4,7 +4,7 @@ engine.LookAction = function(world, words) {
   if (words.length === 0) {
     world.DescribeRoom();
   } else {
-    obj = world.LocateObject(words);
+    var obj = world.LocateObject(words);
     if (obj != null) {
       if (obj.location == world.INVENTORY) {
         world.Print(obj.Description(world));
@@ -20,8 +20,36 @@ engine.LookAction = function(world, words) {
   }
 };
 
+engine.UseAction = function(world, words) {
+  var obj = world.LocateObject(words);
+  if (obj == null) {
+    world.UnknownObject(words.join(' '));
+    return;
+  }
+  if (obj.location != world.INVENTORY) {
+    world.NotHave(obj);
+    return;
+  }
+  words.shift();
+  var onWhat = null;
+  if (words.length > 0) {
+    if (words[0] == 'on' && words.length > 1) {
+      words.shift();
+    }
+    onWhat = world.LocateObject(words);
+    if (onWhat != null) {
+      if (onWhat.location != world.INVENTORY &&
+          onWhat.location != world.location) {
+        world.NotHere(obj);
+        return
+      }
+    }
+  }
+  obj.Use(world, onWhat);
+};
+
 engine.GetAction = function(world, words) {
-  obj = world.LocateObject(words);
+  var obj = world.LocateObject(words);
   if (obj != null) {
     if (obj.location == world.INVENTORY) {
       world.AlreadyHave(obj);
@@ -36,7 +64,7 @@ engine.GetAction = function(world, words) {
 };
 
 engine.DropAction = function(world, words) {
-  obj = world.LocateObject(words);
+  var obj = world.LocateObject(words);
   if (obj != null) {
     if (obj.location == world.INVENTORY) {
       world.Drop(obj);
@@ -50,7 +78,7 @@ engine.DropAction = function(world, words) {
 
 engine.InvAction = function(world, words) {
   world.ListInventory();
-}
+};
 
 engine.GoAction = function(world, words) {
   room = world.LocateRoom(words);
@@ -160,6 +188,17 @@ engine.World.prototype.Drop = function(obj) {
   this.game.Dropped(this, obj);
 };
 
+engine.World.prototype.Destroy = function(obj) {
+  if (obj.location != this.INVENTORY) {
+    console.log('Error: trying to destroy object "' + obj.NAME + '",' +
+        'but it is not in the inventory.')
+    return;
+  }
+  var inv = this.INVENTORY.objects;
+  inv.splice(inv.indexOf(obj), 1);
+  obj.location = null;
+};
+
 engine.World.prototype.ListInventory = function() {
   this.game.ListInventory(this, this.INVENTORY.objects.slice(0));
 };
@@ -253,6 +292,7 @@ engine.Engine.prototype.ACTIONS = {
   'get': engine.GetAction,
   'drop': engine.DropAction,
   'inv': engine.InvAction,
+  'use': engine.UseAction,
 };
 
 engine.Room = function() {};
@@ -307,6 +347,9 @@ engine.Object.prototype.Description = function(world) {
 };
 engine.Object.prototype.CanGet = function(world) {
   return true;
+};
+engine.Object.prototype.Use = function(world, onWhat) {
+  world.Print('I don\'t know how to use ' + this.TITLE + '.');
 };
 engine.MakeObject = function(data) {
   newObjectClass = function() {
