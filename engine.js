@@ -267,14 +267,23 @@ engine.Engine.prototype.KeyDown = function(e) {
     if (this.actionIndex > 0) {
       this.actionIndex--;
       this.input_.value = this.actionHistory[this.actionIndex];
+      var len = this.input_.value.length
+      this.input_.selectionStart = this.input_.selectionEnd = len;
+      e.stopPropagation();
+      return false;
     }
   } else if (e.keyCode === 40) {
     if (this.actionIndex < this.actionHistory.length - 1) {
       this.actionIndex++;
       this.input_.value = this.actionHistory[this.actionIndex];
+      var len = this.input_.value.length
+      this.input_.selectionStart = this.input_.selectionEnd = len;
+      e.stopPropagation();
+      return false;
     }
   } else if (e.keyCode === 13) {
     this.Action();
+    return false;
   }
 };
 
