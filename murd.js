@@ -387,7 +387,8 @@ murd.Game.prototype.HandleAction = function(world, verb, words) {
       return true;
     }
     murd.BEDROOM.alarmClockOn = false;
-    world.Print('Ahh, finally a bit of peace.');
+    world.Print("Ahh, finally a bit of peace. The room looks different without "
+                + "all this noise.");
     return true;
   }
   return false;
