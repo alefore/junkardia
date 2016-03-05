@@ -128,6 +128,9 @@ engine.Room.prototype.ProcessAction = function(action, world) {
   return false;
 };
 
+engine.Room.prototype.Init = function(world) {
+};
+
 engine.Room.prototype.Description = function(world) {
   return '';
 };
@@ -139,6 +142,17 @@ engine.Room.prototype.CanEnter = function(world) {
 
 engine.Room.prototype.Exits = function(world) {
   return {};
+};
+
+engine.MakeRoom = function(data) {
+  newRoomClass = function() {
+    this.Init();
+  };
+  newRoomClass.prototype = new engine.Room();
+  for (key in data) {
+    newRoomClass.prototype[key] = data[key];
+  }
+  return new newRoomClass();
 };
 
 engine.Game = function() {};
