@@ -2,11 +2,7 @@ var engine = {};
 
 engine.LookAction = function(world, words) {
   if (words.length === 0) {
-    world.Print(world.location.Description(world));
-
-    var objects = world.roomObjects[world.location.NAME].slice(0);
-    objects = world.location.DescribeObjects(world, objects);
-    world.DescribeObjects(objects);
+    world.DescribeRoom();
   } else {
     obj = world.LocateObject(words);
     if (obj != null) {
@@ -168,6 +164,14 @@ engine.World.prototype.ListInventory = function() {
   this.game.ListInventory(this, this.INVENTORY.objects.slice(0));
 };
 
+engine.World.prototype.DescribeRoom = function() {
+  this.Print(this.location.Description(this));
+
+  var objects = this.roomObjects[this.location.NAME].slice(0);
+  objects = this.location.DescribeObjects(this, objects);
+  this.DescribeObjects(objects);
+};
+
 engine.World.prototype.DescribeObjects = function(objects) {
   this.game.DescribeObjects(this, objects);
 };
@@ -192,6 +196,7 @@ engine.World.prototype.Enter = function(room) {
   }
 
   this.location = room;
+  this.DescribeRoom();
 };
 
 engine.World.prototype.SetFlag = function(key, value) {
@@ -267,7 +272,6 @@ engine.Room.prototype.CanLeave = function(world, toRoom) {
 };
 
 engine.Room.prototype.CanEnter = function(world) {
-  world.Print('Ok.');
   return true;
 };
 
