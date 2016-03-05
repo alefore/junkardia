@@ -334,9 +334,13 @@ murd.LINT = engine.MakeObject({
     return 'Maybe you should consider buying new pants.'
   },
   Use: function(world, onWhat) {
+    if (this.location != world.INVENTORY) {
+      world.game.NotHave(world, this);
+      return;
+    }
     if (onWhat == murd.WALLET) {
       if (murd.WALLET.location != world.INVENTORY) {
-        world.NotHave(onWhat);
+        world.game.NotHave(world, onWhat);
         return;
       }
       world.Print(

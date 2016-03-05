@@ -160,8 +160,9 @@ engine.World.prototype.UseAction = function(words) {
     this.game.UnknownObject(this, words.join(' '));
     return;
   }
-  if (obj.location != this.INVENTORY) {
-    this.game.NotHave(this, obj);
+  if (obj.location != this.INVENTORY &&
+      obj.location != this.location) {
+    this.game.NotHere(this, obj);
     return;
   }
   words.shift();
