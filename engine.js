@@ -264,9 +264,14 @@ engine.Engine.prototype.Print = function(line) {
 
 engine.Engine.prototype.KeyDown = function(e) {
   if (e.keyCode === 38) {
-    if (this.actionIndex >= 0) {
-      this.input_.value = this.actionHistory[this.actionIndex];
+    if (this.actionIndex > 0) {
       this.actionIndex--;
+      this.input_.value = this.actionHistory[this.actionIndex];
+    }
+  } else if (e.keyCode === 40) {
+    if (this.actionIndex < this.actionHistory.length - 1) {
+      this.actionIndex++;
+      this.input_.value = this.actionHistory[this.actionIndex];
     }
   } else if (e.keyCode === 13) {
     this.Action();
@@ -299,7 +304,7 @@ engine.Engine.prototype.ProcessAction = function(action) {
   if (this.actionHistory[this.actionHistory.length - 1] != action) {
     this.actionHistory.push(action);
   }
-  this.actionIndex = this.actionHistory.length - 1;
+  this.actionIndex = this.actionHistory.length;
 };
 
 engine.Entity = function() {};
