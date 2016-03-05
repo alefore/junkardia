@@ -234,6 +234,9 @@ engine.World.prototype.InitActions = function() {
   };
 };
 engine.World.prototype.HandleAction = function(verb, words) {
+  if (this.location.HandleAction(this, verb, words)) {
+    return true;
+  }
   if (!(verb in this.ACTIONS)) {
     return false;
   }
@@ -314,6 +317,9 @@ engine.Room.prototype.Exits = function(world) {
 };
 engine.Room.prototype.DescribeObjects = function(world, objects) {
   return objects;
+};
+engine.Room.prototype.HandleAction = function(world, verb, words) {
+  return false;
 };
 
 engine.MakeRoom = function(data) {

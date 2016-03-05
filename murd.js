@@ -95,6 +95,25 @@ murd.RESTROOM = engine.MakeRoom({
   Exits: function(world) {
     return {'bedroom': true}
   },
+  HandleAction: function(world, verb, words) {
+    if (verb != 'use' && verb != 'take') {
+      return false
+    }
+    if (words[0] !== 'shower') {
+      return false;
+    }
+    if (world.GetFlag(murd.flags.showered)) {
+      world.Print("You remember last month's water bill," +
+          " and decide that one shower is enough.");
+      return true;
+    }
+    world.SetFlag(murd.flags.showered, true);
+    world.Print(
+        "You take your clothes off and take a quick shower. The water feels "
+        + "refreshing. After showering, you dry yourself with a towel and put "
+        + "on your banker suit.");
+    return true;
+  },
 });
 
 // TODO: Add a mailbox, with some stuff that becomes critical later in the game?
@@ -372,21 +391,6 @@ murd.Game.prototype.HandleAction = function(world, verb, words) {
       return true;
     }
     return false;
-  }
-
-  if (verb == 'use') {
-    if (words[0] !== 'shower') {
-      return false;
-    }
-    if (world.location != murd.RESTROOM) {
-      return false;
-    }
-    world.SetFlag(murd.flags.showered, true);
-    world.Print(
-        "You take your clothes off and take a quick shower. The water feels "
-        + "refreshing. After showering, you dry yourself with a towel and put "
-        + "on your banker suit.");
-    return true;
   }
 
   if (verb == 'turn' && words[0] == 'off') {
