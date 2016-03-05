@@ -70,8 +70,8 @@ murd.RESTROOM = engine.MakeRoom({
     }
     world.Print('You enter the restroom.');
     if (this.windowOpen) {
-      world.Print("A cold draft of Swiss air, straight from the mountains, "
-                  + "makes you shiver.");
+      world.Print("A cold draft of air, straight from the mountains, makes you "
+                  + "shiver.");
     } else {
       world.Print("The restroom smells a bit.");
     }
