@@ -251,13 +251,26 @@ engine.Engine.prototype.Start = function(game) {
   this.world = new engine.World(this);
   this.world.Init(game);
 
-  this.input_.onchange = this.Action.bind(this);
+  this.actionHistory = [];
+  this.actionIndex = -1;
+  this.input_.onkeydown = this.KeyDown.bind(this);
   this.input_.focus();
 };
 
 engine.Engine.prototype.Print = function(line) {
   this.screen_.innerHTML += line + '<br>';
   this.screen_.scrollTop = this.screen_.scrollHeight;
+};
+
+engine.Engine.prototype.KeyDown = function(e) {
+  if (e.keyCode === 38) {
+    if (this.actionIndex >= 0) {
+      this.input_.value = this.actionHistory[this.actionIndex];
+      this.actionIndex--;
+    }
+  } else if (e.keyCode === 13) {
+    this.Action();
+  }
 };
 
 engine.Engine.prototype.Action = function() {
@@ -276,11 +289,17 @@ engine.Engine.prototype.ProcessAction = function(action) {
   this.Print('> ' + action);
   var words = action.toLowerCase().split(/\s+/);
   var verb = words.shift();
-  if (!this.game.HandleAction(this.world, verb, words)) {
-    if (!this.world.HandleAction(verb, words)) {
-      this.game.UnknownAction(this.world, action);
-    }
+  var handled = this.game.HandleAction(this.world, verb, words);
+  if (!handled) {
+    handled = this.world.HandleAction(verb, words);
   }
+  if (!handled) {
+    this.game.UnknownAction(this.world, action);
+  }
+  if (this.actionHistory[this.actionHistory.length - 1] != action) {
+    this.actionHistory.push(action);
+  }
+  this.actionIndex = this.actionHistory.length - 1;
 };
 
 engine.Entity = function() {};
