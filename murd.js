@@ -292,12 +292,25 @@ murd.ENGE = engine.MakeRoom({
     if (toRoom == murd.TESSINERPLATZ) {
       return true;
     }
-    if (toRoom == murd.WIEDIKON) {
-      world.Print("Why would you go back now? You didn't forget anything.");
-    } else {
-      world.Print(
-          "There's no time for that! Now you really should get to your office, "
-          + "which is a few blocks from Tessinerplatz.");
+    if (murd.OFFICE.timeWorking == 0) {
+      if (toRoom == murd.WIEDIKON) {
+        world.Print("Why would you go back now? You didn't forget anything.");
+      } else {
+        world.Print(
+            "There's no time for that! Now you really should get to your "
+            + "office, which is a few blocks from Tessinerplatz.");
+      }
+    }
+    if (murd.OFFICE.timeWorking == 1) {
+      if (world.GetFlag(murd.flags.foodEaten) == 0) {
+        world.Print(
+            "Hmm, your lunch break is not that long. You barely have time to "
+            + "eat a slice of pizza from the Pizzeria Tricolore.");
+      } else {
+        world.Print(
+            "Your lunch break is over, you should get back to work. Sigh. "
+            + "Spreadsheets...");
+      }
     }
     return false;
   },
@@ -350,7 +363,10 @@ murd.OFFICE = engine.MakeRoom({
     description +=
         this.sitting ? "the chair on which you're sitting" : "a chair";
     description += ", and an old computer.";
-    if (this.timeWorking == 1) {
+    if (this.timeWorking == 1
+        && world.GetFlag(murd.flags.foodEaten) == 0
+        && murd.PIZZA.location != world.INVENTORY
+        && murd.PIZZA.location != murd.OFFICE) {
       // As a hint.
       description += " From here you can easily reach Tessinerplatz.";
     }
@@ -369,18 +385,34 @@ murd.OFFICE = engine.MakeRoom({
     return out;
   },
   CanEnter: function(world) {
-    world.Print(
-        "You go through the door, take the lift an enter your cubicle. Looks "
-        + "like nobody noticed how late you are.");
+    if (murd.OFFICE.timeWorking == 0) {
+      world.Print(
+          "You go through the door, take the lift an enter your cubicle. Looks "
+          + "like nobody noticed how late you are.");
+    } else if (murd.OFFICE.timeWorking == 1) {
+      world.Print("You take the lift and get back to your cubicle.");
+    }
     return true;
   },
   CanLeave: function(world, toRoom) {
-    if (this.timeWorking == 1) {
-      this.sitting = false;
-      return true;
+    if (this.timeWorking == 0) {
+      world.Print("No, you need to focus on your work!");
+      return false;
     }
-    world.Print("No, you need to focus on your work!");
-    return false;
+    if (this.timeWorking == 1) {
+      if (world.GetFlag(murd.flags.foodEaten) == 0) {
+        this.sitting = false;
+        return true;
+      }
+      world.Print("Your lunch break is over, time to get back to your "
+                  + "spreadsheets.");
+      return false;
+    }
+    if (this.timeWorking == 2) {
+      world.Print("You should probably work a bit more, or you're never going "
+                  + "to finish this annoying report.");
+      return false;
+    }
   },
   Exits: function(world) {
     return {'tessinerplatz': true};
@@ -390,10 +422,16 @@ murd.OFFICE = engine.MakeRoom({
 murd.PIZZERIA = engine.MakeRoom({
   NAME: 'pizzeria',
   TITLE: 'the pizzeria',
+  Init: function() {
+    // So that if he drops the pizza and takes it again, we don't show him
+    // paying again.
+    this.pizzaPaid = false;
+  },
   Description: function(world) {
     return "The pizzeria Tricolore, located near Tessinerplatz, is the place "
            + "where you usually have lunch. "
-           + "The pizza is mediocre but the prices are affordable for Zurich.";
+           + "The pizza is mediocre but the prices are affordable for Zurich. "
+           + "A bunch of people are having lunch here.";
   },
   CanEnter: function(world) {
     if (murd.OFFICE.timeWorking == 0) {
@@ -519,10 +557,6 @@ murd.COMPUTER = engine.MakeObject({
            + "here all day.";
   },
   Use: function(world, onWhat) {
-    if (murd.OFFICE.timeWorking == 3) {
-      world.Print("You're too tired to work further. It's time to go home.");
-      return;
-    }
     if (murd.OFFICE.timeWorking == 0) {
       murd.OFFICE.timeWorking++;
       var description;
@@ -542,16 +576,49 @@ murd.COMPUTER = engine.MakeObject({
                   + "to growl.");
       return;
     }
+
     if (murd.OFFICE.timeWorking == 1) {
       if (world.GetFlag(murd.flags.foodEaten) == 0) {
-        world.Print(
-            "You try to work further but it's pointless: you're too hungry to "
-            + "focus. Go grab a pizza or something?");
+        var description = "You try to work further but it's pointless: you're "
+                          + "too hungry to focus. ";
+        if (murd.PIZZA.location == world.INVENTORY) {
+          description += "Eat your pizza?";
+        } else {
+          description += "Go grab a pizza or something?";
+        }
+        world.Print(description);
         return;
       }
+
       murd.OFFICE.timeWorking++;
-      world.Print("<h1>You've won.</h1>");
+      var description;
+      if (murd.OFFICE.sitting) {
+        description = "You start working on your spreadsheets again.";
+      } else {
+        murd.OFFICE.sitting = true;
+        description =
+            "You sit down and start working on your spreadsheets again.";
+      }
+      description += " The afternoon goes by.<br>"
+          + "At some point your manager comes in. He commends your hard work "
+          + "and asks you to finish preparing your report by end-of-day, "
+          + "because he has an important meeting tomorrow. Damn, looks like "
+          + "you'll have to work late tonight.";
+      world.Print(description);
+      return;
     }
+
+    if (murd.OFFICE.timeWorking == 2) {
+      world.Print("<h1>You've won.</h1>");
+      return;
+    }
+
+    if (murd.OFFICE.timeWorking == 3) {
+      world.Print("You're too tired to work further and your report is done. "
+                  + "It's time to go home and get some sleep.");
+      return;
+    }
+
     world.Print("Internal error.");
   },
   CanGet: function(world) {
@@ -592,6 +659,42 @@ murd.OFFICE_DESK = engine.MakeObject({
   CanGet: function(world) {
     world.Print("It's too heavy.");
     return false;
+  }
+});
+
+murd.PIZZA = engine.MakeObject({
+  NAME: 'pizza',
+  TITLE: 'a slice of pizza',
+  INITIAL_LOCATION: murd.PIZZERIA,
+  Description: function(world) {
+    return "A mediocre slice of pizza margherita from the Pizzera Tricolore.";
+  },
+  Use: function(world, onWhat) {
+    if (this.location != world.INVENTORY) {
+      world.Get(this);
+      if (this.location != world.INVENTORY) {
+        return;  // Couldn't get it.
+      }
+    }
+
+    world.SetFlag(murd.flags.foodEaten,
+                  world.GetFlag(murd.flags.FoodEaten) + 1);
+    world.Destroy(this);
+    world.Print("You eat the slice of pizza. It's not the best you've eaten, "
+                + "but it certainly calms your appetite.");
+  },
+  CanGet: function(world) {
+    if (murd.PIZZERIA.pizzaPaid) {
+      return true;
+    }
+    if (murd.WALLET.location != world.INVENTORY) {
+      world.Print("Ooops, you don't have your wallet, you can't pay for it!");
+      return false;
+    }
+    // TODO: Inhibit the "Ok" message.
+    murd.PIZZERIA.pizzaPaid = true;
+    world.Print("You take your credit card out of your wallet and pay for it.");
+    return true;
   }
 });
 
@@ -643,4 +746,5 @@ murd.Game.prototype.OBJECTS = [
   murd.COMPUTER,
   murd.OFFICE_CHAIR,
   murd.OFFICE_DESK,
+  murd.PIZZA,
 ];
