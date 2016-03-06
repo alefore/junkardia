@@ -371,6 +371,10 @@ murd.OFFICE = engine.MakeRoom({
     return true;
   },
   CanLeave: function(world, toRoom) {
+    if (this.timeWorking == 1) {
+      this.sitting = false;
+      return true;
+    }
     world.Print("No, you need to focus on your work!");
     return false;
   },
