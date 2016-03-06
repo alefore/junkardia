@@ -721,6 +721,18 @@ murd.Game.prototype.HandleAction = function(world, verb, words) {
     return false;
   }
 
+  if (verb == 'eat') {
+    if (words[0] == 'pizza') {
+      if (murd.PIZZA.location != world.location
+          && murd.PIZZA.location != world.INVENTORY) {
+        world.Print("I'd love to, but I see no pizza here.");
+      } else {
+        murd.PIZZA.Use(world, null);
+      }
+      return true;
+    }
+  }
+
   return false;
 };
 
