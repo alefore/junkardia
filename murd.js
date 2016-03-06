@@ -87,15 +87,24 @@ murd.RESTROOM = engine.MakeRoom({
 
   Init: function() {
     this.windowOpen = false;
+    // Used to alternate the messages in the description after the window is
+    // open.
+    this.descriptionCount = 0;
   },
 
   Description: function(world) {
     var description = "The blue tiles in the restroom are a bit cold.";
     var isShowerWet = world.GetFlag(murd.flags.showered) ? " wet" : "";
     if (this.windowOpen) {
-      description +=
-          " A refreshing current of fresh air blows in from the open window."
-          + " There's a" + isShowerWet + " shower here.";
+      if (this.descriptionCount % 2 == 0) {
+        description +=
+            " A refreshing current of fresh air blows in from the open window.";
+      } else {
+        description += " A cold draft of air, straight from the mountains, "
+                       + "makes you shiver.";
+      }
+      this.descriptionCount++;
+      description += " There's a" + isShowerWet + " shower here.";
     } else {
       description +=
           " The restroom smells a bit. There's a window and a" + isShowerWet
@@ -109,12 +118,6 @@ murd.RESTROOM = engine.MakeRoom({
       return false;
     }
     world.Print('You enter the restroom.');
-    if (this.windowOpen) {
-      world.Print("A cold draft of air, straight from the mountains, makes you "
-                  + "shiver.");
-    } else {
-      world.Print("The restroom smells a bit.");
-    }
     return true;
   },
   Exits: function(world) {
