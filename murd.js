@@ -325,8 +325,8 @@ murd.TESSINERPLATZ = engine.MakeRoom({
   NAME: 'tessinerplatz',
   TITLE: 'Tessinerplatz',
   Description: function(world) {
-    return "You're in a beautiful square in front of the Enge train station. "
-           + "From here you can walk to your office.";
+    return "You're in Tessinerplatz, a beautiful square in front of the Enge "
+           + "train station. From here you can walk to your office.";
   },
   Exits: function(world) {
     return {'enge': true, 'office': true};
