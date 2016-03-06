@@ -104,7 +104,7 @@ murd.RESTROOM = engine.MakeRoom({
       }
       this.descriptionCount++;
     } else {
-      description += " The restroom smells a bit. There's a window here.";
+      description += " The restroom smells a bit.";
     }
     return description;
   },
@@ -394,6 +394,26 @@ murd.SHOWER = engine.MakeObject({
   },
 });
 
+murd.RESTROOM_WINDOW = engine.MakeObject({
+  NAME: 'window',
+  TITLE: 'a window',
+  INITIAL_LOCATION: murd.RESTROOM,
+  Use: function(world, onWhat) {
+    murd.RESTROOM.windowOpen = !murd.RESTROOM.windowOpen;
+    if (murd.RESTROOM.windowOpen) {
+      world.Print("You open that window. Ahh, a fresh breeze of Swiss air!");
+      this.TITLE = 'an open window';
+    } else {
+      world.Print("You close the window.");
+      this.TITLE = 'a window';
+    }
+  },
+  CanGet: function(world) {
+    world.Print("You can't; it's fixed to the wall.");
+    return false;
+  }
+});
+
 murd.COMPUTER = engine.MakeObject({
   NAME: 'computer',
   TITLE: 'your old computer',
@@ -431,8 +451,11 @@ murd.Game.prototype.HandleAction = function(world, verb, words) {
       if (world.location != murd.RESTROOM) {
         return false;
       }
-      murd.RESTROOM.windowOpen = true;
-      world.Print("You open that window. Ahh, a fresh breeze of Swiss air!");
+      if (murd.RESTROOM.windowOpen) {
+        world.Print("The window is already open.");
+        return true;
+      }
+      murd.RESTROOM_WINDOW.Use(world, null);
       return true;
     }
     return false;
@@ -457,5 +480,6 @@ murd.Game.prototype.OBJECTS = [
   murd.WALLET,
   murd.LINT,
   murd.SHOWER,
+  murd.RESTROOM_WINDOW,
   murd.COMPUTER,
 ];
