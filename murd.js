@@ -86,6 +86,7 @@ murd.RESTROOM = engine.MakeRoom({
   TITLE: 'the restroom',
 
   Init: function() {
+    // TODO: Make this a property of RESTROOM_WINDOW.
     this.windowOpen = false;
     // Used to alternate the messages in the description after the window is
     // open.
@@ -99,8 +100,8 @@ murd.RESTROOM = engine.MakeRoom({
         description +=
             " A refreshing current of fresh air blows in from the open window.";
       } else {
-        description += " A cold draft of air, straight from the mountains, "
-                       + "makes you shiver.";
+        description += " A cold draft of air, straight from the mountains into "
+                       + "your window, makes you shiver.";
       }
       this.descriptionCount++;
     } else {
@@ -108,6 +109,19 @@ murd.RESTROOM = engine.MakeRoom({
     }
     return description;
   },
+
+  DescribeObjects: function(world, objects) {
+    var out = []
+    for (var i in objects) {
+      var obj = objects[i];
+      if (obj == murd.RESTROOM_WINDOW && this.windowOpen) {
+        continue;  // Already mentioned in the description.
+      }
+      out.push(obj)
+    }
+    return out;
+  },
+
   CanEnter: function(world) {
     if (!world.GetFlag('restroomDoorOpen')) {
       world.Print('The door is closed.');
@@ -123,6 +137,15 @@ murd.RESTROOM = engine.MakeRoom({
     if (isShowerCommand(verb, words)) {
       murd.SHOWER.Use(world);
       return true;
+    }
+    if (words[0] == 'window') {
+      if (verb == 'open') {
+        murd.RESTROOM_WINDOW.Open(world);
+        return true;
+      } else if (verb == 'close') {
+        murd.RESTROOM_WINDOW.Close(world);
+        return true;
+      }
     }
     return false;
   },
@@ -399,19 +422,28 @@ murd.RESTROOM_WINDOW = engine.MakeObject({
   TITLE: 'a window',
   INITIAL_LOCATION: murd.RESTROOM,
   Use: function(world, onWhat) {
-    murd.RESTROOM.windowOpen = !murd.RESTROOM.windowOpen;
-    if (murd.RESTROOM.windowOpen) {
-      world.Print("You open that window. Ahh, a fresh breeze of Swiss air!");
-      this.TITLE = 'an open window';
-    } else {
-      world.Print("You close the window.");
-      this.TITLE = 'a window';
-    }
+    (murd.RESTROOM.windowOpen ? this.Close : this.Open)(world);
   },
   CanGet: function(world) {
     world.Print("You can't; it's fixed to the wall.");
     return false;
-  }
+  },
+  Open: function(world) {
+    if (murd.RESTROOM.windowOpen) {
+      world.Print("It's already open.");
+      return;
+    }
+    murd.RESTROOM.windowOpen = true;
+    world.Print("You open that window. Ahh, a fresh breeze of Swiss air!");
+  },
+  Close: function(world) {
+    if (!murd.RESTROOM.windowOpen) {
+      world.Print("It's already closed.");
+      return;
+    }
+    murd.RESTROOM.windowOpen = false;
+    world.Print("You close the window.");
+  },
 });
 
 murd.COMPUTER = engine.MakeObject({
@@ -445,17 +477,6 @@ murd.Game.prototype.HandleAction = function(world, verb, words) {
       }
       world.SetFlag('restroomDoorOpen', true);
       world.Print('Ok');
-      return true;
-    }
-    if (words[0] == 'window') {
-      if (world.location != murd.RESTROOM) {
-        return false;
-      }
-      if (murd.RESTROOM.windowOpen) {
-        world.Print("The window is already open.");
-        return true;
-      }
-      murd.RESTROOM_WINDOW.Use(world, null);
       return true;
     }
     return false;
