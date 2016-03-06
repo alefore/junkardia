@@ -1,66 +1,5 @@
 var engine = {};
 
-engine.LookAction = function(world, words) {
-  if (words.length === 0) {
-    world.DescribeRoom();
-  } else {
-    obj = world.LocateObject(words);
-    if (obj != null) {
-      if (obj.location == world.INVENTORY) {
-        world.Print(obj.Description(world));
-      } else if (obj.location != world.location) {
-        world.NotHere(obj);
-      } else {
-        var objs = world.location.DescribeObjects(world, [obj]);
-        world.DescribeObjects(objs);
-      }
-    } else {
-      world.UnknownObject(words.join(' '));
-    }
-  }
-};
-
-engine.GetAction = function(world, words) {
-  obj = world.LocateObject(words);
-  if (obj != null) {
-    if (obj.location == world.INVENTORY) {
-      world.AlreadyHave(obj);
-    } else if (obj.location != world.location) {
-      world.NotHere(obj);
-    } else {
-      world.Get(obj);
-    }
-  } else {
-    world.UnknownObject(words.join(' '));
-  }
-};
-
-engine.DropAction = function(world, words) {
-  obj = world.LocateObject(words);
-  if (obj != null) {
-    if (obj.location == world.INVENTORY) {
-      world.Drop(obj);
-    } else {
-      world.NotHave(obj);
-    }
-  } else {
-    world.UnknownObject(words.join(' '));
-  }
-};
-
-engine.InvAction = function(world, words) {
-  world.ListInventory();
-}
-
-engine.GoAction = function(world, words) {
-  room = world.LocateRoom(words);
-  if (room !== null) {
-    world.Enter(room);
-  } else {
-    world.UnknownRoom(words.join(' '));
-  }
-};
-
 engine.Engine = function(screen, input) {
   this.screen_ = screen;
   this.input_ = input;
@@ -71,6 +10,7 @@ engine.World = function(eng) {
 };
 
 engine.World.prototype.Init = function(game) {
+  this.InitActions();
   this.game = game;
   this.gameOver = false;
   this.flags = {};
@@ -121,25 +61,6 @@ engine.World.prototype.Print = function(line) {
   this.engine.Print(line);
 };
 
-engine.World.prototype.UnknownRoom = function(room) {
-  this.game.UnknownRoom(this, room);
-};
-
-engine.World.prototype.UnknownObject = function(obj) {
-  this.game.UnknownObject(this, obj);
-};
-
-engine.World.prototype.AlreadyHave = function(obj) {
-  this.game.AlreadyHave(this, obj);
-};
-
-engine.World.prototype.NotHere = function(obj) {
-  this.game.NotHere(this, obj);
-};
-engine.World.prototype.NotHave = function(obj) {
-  this.game.NotHave(this, obj);
-};
-
 engine.World.prototype.Get = function(obj) {
   if (!obj.CanGet(this)) {
     return;
@@ -160,21 +81,28 @@ engine.World.prototype.Drop = function(obj) {
   this.game.Dropped(this, obj);
 };
 
-engine.World.prototype.ListInventory = function() {
-  this.game.ListInventory(this, this.INVENTORY.objects.slice(0));
+engine.World.prototype.Destroy = function(obj) {
+  if (obj.location != this.INVENTORY) {
+    console.log('Error: trying to destroy object "' + obj.NAME + '",' +
+        'but it is not in the inventory.')
+    return;
+  }
+  var inv = this.INVENTORY.objects;
+  inv.splice(inv.indexOf(obj), 1);
+  obj.location = null;
 };
 
 engine.World.prototype.DescribeRoom = function() {
   this.Print(this.location.Description(this));
 
   var objects = this.roomObjects[this.location.NAME].slice(0);
-  objects = this.location.DescribeObjects(this, objects);
   this.DescribeObjects(objects);
 };
 
 engine.World.prototype.DescribeObjects = function(objects) {
+  objects = this.location.DescribeObjects(this, objects);
   this.game.DescribeObjects(this, objects);
-};
+}
 
 engine.World.prototype.Enter = function(room) {
   if (room === this.location) {
@@ -207,19 +135,161 @@ engine.World.prototype.GetFlag = function(key) {
   return this.flags[key];
 };
 
+engine.World.prototype.LookAction = function(words) {
+  if (words.length === 0) {
+    this.DescribeRoom();
+  } else {
+    var obj = this.LocateObject(words);
+    if (obj != null) {
+      if (obj.location == this.INVENTORY) {
+        this.Print(obj.Description(this));
+      } else if (obj.location != this.location) {
+        this.game.NotHere(this, obj);
+      } else {
+        this.DescribeObjects([obj]);
+      }
+    } else {
+      this.game.UnknownObject(this, words.join(' '));
+    }
+  }
+};
+
+engine.World.prototype.UseAction = function(words) {
+  var obj = this.LocateObject(words);
+  if (obj == null) {
+    this.game.UnknownObject(this, words.join(' '));
+    return;
+  }
+  if (obj.location != this.INVENTORY &&
+      obj.location != this.location) {
+    this.game.NotHere(this, obj);
+    return;
+  }
+  words.shift();
+  var onWhat = null;
+  if (words.length > 0) {
+    if (words[0] == 'on' && words.length > 1) {
+      words.shift();
+    }
+    onWhat = this.LocateObject(words);
+    if (onWhat != null) {
+      if (onWhat.location != this.INVENTORY &&
+          onWhat.location != this.location) {
+        this.game.NotHere(this, onWhat);
+        return
+      }
+    }
+  }
+  obj.Use(this, onWhat);
+};
+
+engine.World.prototype.GetAction = function(words) {
+  var obj = this.LocateObject(words);
+  if (obj != null) {
+    if (obj.location == this.INVENTORY) {
+      this.game.AlreadyHave(this, obj);
+    } else if (obj.location != this.location) {
+      this.game.NotHere(this, obj);
+    } else {
+      this.Get(obj);
+    }
+  } else {
+    this.game.UnknownObject(this, words.join(' '));
+  }
+};
+
+engine.World.prototype.DropAction = function(words) {
+  var obj = this.LocateObject(words);
+  if (obj != null) {
+    if (obj.location == this.INVENTORY) {
+      this.Drop(obj);
+    } else {
+      this.game.NotHave(this, obj);
+    }
+  } else {
+    this.game.UnknownObject(this, words.join(' '));
+  }
+};
+
+engine.World.prototype.InvAction = function(words) {
+  this.game.ListInventory(this, this.INVENTORY.objects.slice(0));
+};
+
+engine.World.prototype.GoAction = function(words) {
+  room = this.LocateRoom(words);
+  if (room !== null) {
+    this.Enter(room);
+  } else {
+    this.game.UnknownRoom(this, words.join(' '));
+  }
+};
+
+engine.World.prototype.InitActions = function() {
+  this.ACTIONS = {
+    'look': this.LookAction,
+    'go': this.GoAction,
+    'get': this.GetAction,
+    'drop': this.DropAction,
+    'inv': this.InvAction,
+    'use': this.UseAction,
+  };
+};
+engine.World.prototype.HandleAction = function(verb, words) {
+  if (this.location.HandleAction(this, verb, words)) {
+    return true;
+  }
+  if (!(verb in this.ACTIONS)) {
+    return false;
+  }
+  this.ACTIONS[verb].bind(this)(words);
+  return true;
+}
+
+
 engine.Engine.prototype.Start = function(game) {
   this.screen_.innerHTML = '';
   this.game = game;
   this.world = new engine.World(this);
   this.world.Init(game);
 
-  this.input_.onchange = this.Action.bind(this);
+  this.actionHistory = [];
+  this.actionIndex = -1;
+  this.input_.onkeydown = this.KeyDown.bind(this);
   this.input_.focus();
 };
 
 engine.Engine.prototype.Print = function(line) {
   this.screen_.innerHTML += line + '<br>';
   this.screen_.scrollTop = this.screen_.scrollHeight;
+};
+
+engine.Engine.prototype.KeyDown = function(e) {
+  if (e.keyCode === 38) {
+    if (this.actionIndex > 0) {
+      this.actionIndex--;
+      this.input_.value = this.actionHistory[this.actionIndex];
+      var len = this.input_.value.length
+      this.input_.selectionStart = this.input_.selectionEnd = len;
+      e.stopPropagation();
+      return false;
+    }
+  } else if (e.keyCode === 40) {
+    if (this.actionIndex < this.actionHistory.length) {
+      this.actionIndex++;
+      if (this.actionIndex < this.actionHistory.length) {
+        this.input_.value = this.actionHistory[this.actionIndex];
+      } else {
+        this.input_.value = '';
+      }
+      var len = this.input_.value.length
+      this.input_.selectionStart = this.input_.selectionEnd = len;
+      e.stopPropagation();
+      return false;
+    }
+  } else if (e.keyCode === 13) {
+    this.Action();
+    return false;
+  }
 };
 
 engine.Engine.prototype.Action = function() {
@@ -238,39 +308,40 @@ engine.Engine.prototype.ProcessAction = function(action) {
   this.Print('> ' + action);
   var words = action.toLowerCase().split(/\s+/);
   var verb = words.shift();
-  if (!this.game.HandleAction(this.world, verb, words)) {
-    if (verb in this.ACTIONS) {
-      this.ACTIONS[verb](this.world, words);
-    } else {
-      this.game.UnknownAction(this.world, action);
-    }
+  var handled = this.game.HandleAction(this.world, verb, words);
+  if (!handled) {
+    handled = this.world.HandleAction(verb, words);
   }
+  if (!handled) {
+    this.game.UnknownAction(this.world, action);
+  }
+  if (this.actionHistory[this.actionHistory.length - 1] != action) {
+    this.actionHistory.push(action);
+  }
+  this.actionIndex = this.actionHistory.length;
 };
 
-engine.Engine.prototype.ACTIONS = {
-  'look': engine.LookAction,
-  'go': engine.GoAction,
-  'get': engine.GetAction,
-  'drop': engine.DropAction,
-  'inv': engine.InvAction,
-};
-
-engine.Room = function() {};
-
-engine.Room.prototype.NAME = null;
-engine.Room.prototype.TITLE = null;
-
-engine.Room.prototype.ProcessAction = function(action, world) {
-  return false;
-};
-
-engine.Room.prototype.Init = function(world) {
-};
-
-engine.Room.prototype.Description = function(world) {
+engine.Entity = function() {};
+engine.Entity.prototype.NAME = null;
+engine.Entity.prototype.TITLE = null;
+engine.Entity.prototype.Init = function(world) {};
+engine.Entity.prototype.Description = function(world) {
   return '';
 };
 
+engine.MakeEntity = function(superclass, data) {
+  newClass = function() {
+    this.Init();
+  };
+  newClass.prototype = new superclass();
+  for (key in data) {
+    newClass.prototype[key] = data[key];
+  }
+  return new newClass();
+};
+
+engine.Room = function() {};
+engine.Room.prototype = new engine.Entity();
 engine.Room.prototype.CanLeave = function(world, toRoom) {
   return true;
 };
@@ -285,38 +356,25 @@ engine.Room.prototype.Exits = function(world) {
 engine.Room.prototype.DescribeObjects = function(world, objects) {
   return objects;
 };
+engine.Room.prototype.HandleAction = function(world, verb, words) {
+  return false;
+};
 
 engine.MakeRoom = function(data) {
-  newRoomClass = function() {
-    this.Init();
-  };
-  newRoomClass.prototype = new engine.Room();
-  for (key in data) {
-    newRoomClass.prototype[key] = data[key];
-  }
-  return new newRoomClass();
+  return engine.MakeEntity(engine.Room, data);
 };
 
 engine.Object = function() {};
-engine.Object.NAME = null;
-engine.Object.TITLE= null;
-engine.Object.INITIAL_LOCATION = null;
-engine.Object.prototype.Init = function() {};
-engine.Object.prototype.Description = function(world) {
-  return '';
-};
+engine.Object.prototype = new engine.Entity();
+engine.Object.prototype.INITIAL_LOCATION = null;
 engine.Object.prototype.CanGet = function(world) {
   return true;
 };
+engine.Object.prototype.Use = function(world, onWhat) {
+  world.Print('I don\'t know how to use ' + this.TITLE + '.');
+};
 engine.MakeObject = function(data) {
-  newObjectClass = function() {
-    this.Init();
-  }
-  newObjectClass.prototype = new engine.Object();
-  for (key in data) {
-    newObjectClass.prototype[key] = data[key];
-  }
-  return new newObjectClass();
+  return engine.MakeEntity(engine.Object, data);
 };
 
 engine.Inventory = function() {
