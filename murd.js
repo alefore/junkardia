@@ -63,6 +63,16 @@ murd.BEDROOM = engine.MakeRoom({
           + "restroom.");
       return true;
     }
+    if (verb == "turn" && words[0] == "off" && words[1] == "clock") {
+      if (!this.alarmClockOn) {
+        world.Print("Eh? The alarm clock is already off.");
+        return true;
+      }
+      this.alarmClockOn = false;
+      world.Print("Ahh, finally a bit of peace. The room looks different "
+                  + "without all this noise.");
+      return true;
+    }
     return false;
   },
 
@@ -424,22 +434,6 @@ murd.Game.prototype.HandleAction = function(world, verb, words) {
     return false;
   }
 
-  if (verb == 'turn' && words[0] == 'off') {
-    if (words[1] !== 'clock') {
-      return false;
-    }
-    if (world.location != murd.BEDROOM) {
-      return false;
-    }
-    if (!murd.BEDROOM.alarmClockOn) {
-      world.Print("Eh? The alarm clock is already off.");
-      return true;
-    }
-    murd.BEDROOM.alarmClockOn = false;
-    world.Print("Ahh, finally a bit of peace. The room looks different without "
-                + "all this noise.");
-    return true;
-  }
   return false;
 };
 
