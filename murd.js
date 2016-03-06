@@ -363,10 +363,14 @@ murd.OFFICE = engine.MakeRoom({
     description +=
         this.sitting ? "the chair on which you're sitting" : "a chair";
     description += ", and an old computer.";
-    if (this.timeWorking == 1
-        && world.GetFlag(murd.flags.foodEaten) == 0
-        && murd.PIZZA.location != world.INVENTORY
-        && murd.PIZZA.location != murd.OFFICE) {
+    if (this.timeWorking == 3) {
+      description += " It's dark outside.";
+    }
+    if ((this.timeWorking == 1
+         && world.GetFlag(murd.flags.foodEaten) == 0
+         && murd.PIZZA.location != world.INVENTORY
+         && murd.PIZZA.location != murd.OFFICE)
+        || this.timeWorking == 3) {
       // As a hint.
       description += " From here you can easily reach Tessinerplatz.";
     }
@@ -412,6 +416,16 @@ murd.OFFICE = engine.MakeRoom({
       world.Print("You should probably work a bit more, or you're never going "
                   + "to finish this annoying report.");
       return false;
+    }
+    if (this.timeWorking == 3) {
+      world.Print(
+          "You try to take the lift down but it appears to be out of service. "
+          + "Ugh, you'll have to take the stairs.<br>"
+          + "As you're walking down, you stumble and nearly fall as you find "
+          + "the <b>murder scene</b>! The body of your colleague Micha is "
+          + "laying on the ground, between floors 3 and 4!<br>"
+          + "Welcome to Micha's Murder Mistery!<br>"
+          + "<h1>You've won.</h1>");
     }
   },
   Exits: function(world) {
@@ -609,7 +623,13 @@ murd.COMPUTER = engine.MakeObject({
     }
 
     if (murd.OFFICE.timeWorking == 2) {
-      world.Print("<h1>You've won.</h1>");
+      murd.OFFICE.sitting = true;
+      murd.OFFICE.timeWorking++;
+      world.Print(
+          "You continue to work on your spreadsheet. The night falls upon "
+          + "you.<br>"
+          + "Eventually you finish. It's late now, all your coworkers have "
+          + "long left.");
       return;
     }
 
@@ -632,7 +652,9 @@ murd.OFFICE_CHAIR = engine.MakeObject({
   NAME: 'chair',
   TITLE: 'your chair',
   INITIAL_LOCATION: murd.OFFICE,
-  Description: function(world) {},
+  Description: function(world) {
+    return "A standard office chair.";
+  },
   Use: function(world, onWhat) {
     if (murd.OFFICE.sitting) {
       world.Print("You're already sitting down on it.");
