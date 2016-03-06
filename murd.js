@@ -574,6 +574,20 @@ murd.RESTROOM_WINDOW = engine.MakeObject({
   },
 });
 
+murd.TESSINERPLATZ_FOUNTAIN = engine.MakeObject({
+  NAME: 'fountain',
+  TITLE: 'a fountain',
+  INITIAL_LOCATION: murd.TESSINERPLATZ,
+  Description: function(world) {},
+  Use: function(world, onWhat) {
+    world.Print("You have no use for the fountain.");
+  },
+  CanGet: function(world) {
+    world.Print("Eh? That makes no sense.");
+    return false;
+  },
+});
+
 murd.COMPUTER = engine.MakeObject({
   NAME: 'computer',
   TITLE: 'your old computer',
@@ -810,6 +824,7 @@ murd.Game.prototype.OBJECTS = [
   murd.LINT,
   murd.SHOWER,
   murd.RESTROOM_WINDOW,
+  murd.TESSINERPLATZ_FOUNTAIN,
   murd.COMPUTER,
   murd.OFFICE_CHAIR,
   murd.OFFICE_DESK,
