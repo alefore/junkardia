@@ -2,6 +2,9 @@ var murd = {};
 
 murd.flags = {};
 murd.flags.showered = 'showered';
+// A counter of the number of units of food eaten (each action that consumes a
+// food item should increment it).
+murd.flags.foodEaten = 'foodEaten';
 
 function isShowerCommand(verb, words) {
   return verb == 'shower'
@@ -326,10 +329,11 @@ murd.TESSINERPLATZ = engine.MakeRoom({
   TITLE: 'Tessinerplatz',
   Description: function(world) {
     return "You're in Tessinerplatz, a beautiful square in front of the Enge "
-           + "train station. From here you can walk to your office.";
+           + "train station. From here you can walk to your office or to the "
+           + "pizzeria.";
   },
   Exits: function(world) {
-    return {'enge': true, 'office': true};
+    return {'enge': true, 'office': true, 'pizzeria': true};
   }
 });
 
@@ -381,6 +385,27 @@ murd.OFFICE = engine.MakeRoom({
   Exits: function(world) {
     return {'tessinerplatz': true};
   }
+});
+
+murd.PIZZERIA = engine.MakeRoom({
+  NAME: 'pizzeria',
+  TITLE: 'the pizzeria',
+  Description: function(world) {
+    return "The pizzeria Tricolore, located near Tessinerplatz, is the place "
+           + "where you usually have lunch. "
+           + "The pizza is mediocre but the prices are affordable for Zurich.";
+  },
+  CanEnter: function(world) {
+    if (murd.OFFICE.timeWorking == 0) {
+      world.Print("The pizzeria is not open yet. You knock on the door but "
+                  + "nobody opens.");
+      return false;
+    }
+    return true;
+  },
+  Exits: function(world) {
+    return {'tessinerplatz': true};
+  },
 });
 
 murd.WALLET = engine.MakeObject({
@@ -518,14 +543,14 @@ murd.COMPUTER = engine.MakeObject({
       return;
     }
     if (murd.OFFICE.timeWorking == 1) {
-      if (!world.GetFlag(murd.flags.ateLunchFirstDay)) {
+      if (world.GetFlag(murd.flags.foodEaten) == 0) {
         world.Print(
             "You try to work further but it's pointless: you're too hungry to "
             + "focus. Go grab a pizza or something?");
         return;
       }
       murd.OFFICE.timeWorking++;
-      world.Print("You've won.");
+      world.Print("<h1>You've won.</h1>");
     }
     world.Print("Internal error.");
   },
@@ -577,6 +602,7 @@ murd.Game = function() {
 murd.Game.prototype = new engine.Game();
 murd.Game.prototype.InitState = function(world) {
   world.SetFlag('restroomDoorOpen', false);
+  world.SetFlag('foodEaten', 0);
 };
 
 murd.Game.prototype.HandleAction = function(world, verb, words) {
@@ -606,6 +632,7 @@ murd.Game.prototype.ROOMS = [
   murd.AIRPORT,
   murd.OERLIKON,
   murd.TESSINERPLATZ,
+  murd.PIZZERIA,
   murd.OFFICE,
 ];
 murd.Game.prototype.OBJECTS = [
