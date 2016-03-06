@@ -323,17 +323,34 @@ murd.OERLIKON = engine.MakeRoom({
 murd.OFFICE = engine.MakeRoom({
   NAME: 'office',
   TITLE: 'the office',
+  Init: function() {
+    this.sitting = false;
+    this.timeWorking = 0;
+  },
+
   Description: function(world) {
-    return "Your office, in a small branch of a big bank.<br>"
-           + "<h1>You won the game!</h1>";
+    var description = "In your cubicle there's a desk, ";
+    description +=
+        this.sitting ? "the chair on which you're sitting" : "a chair";
+    description += ", and an old computer.";
+    return description;
+  },
+  DescribeObjects: function(world, objects) {
+    var out = []
+    for (var i in objects) {
+      var obj = objects[i];
+      if (obj == murd.OFFICE_CHAIR || obj == murd.OFFICE_DESK
+          || obj == murd.COMPUTER) {
+        continue;  // They're already in the description.
+      }
+      out.push(obj)
+    }
+    return out;
   },
   CanEnter: function(world) {
     world.Print(
         "You go through the door, take the lift an enter your cubicle. Looks "
-        + "like nobody noticed how late you are. You sit down on your chair in "
-        + "front of the computer."
-        + "<br>"
-        + "<h1>You won the game!</h1>");
+        + "like nobody noticed how late you are.");
     return true;
   },
   CanLeave: function(world, toRoom) {
@@ -455,8 +472,79 @@ murd.COMPUTER = engine.MakeObject({
     return "An old computer running Windows 98. You fight with spreadsheets "
            + "here all day.";
   },
+  Use: function(world, onWhat) {
+    if (murd.OFFICE.timeWorking == 3) {
+      world.Print("You're too tired to work further. It's time to go home.");
+      return;
+    }
+    if (murd.OFFICE.timeWorking == 0) {
+      murd.OFFICE.timeWorking++;
+      var description;
+      if (murd.OFFICE.sitting) {
+        description = "You boot your old computer.";
+      } else {
+        murd.OFFICE.sitting = true;
+        description = "You sit down in your chair and boot your old computer.";
+      }
+      description += " Windows 98. It takes a while to start...<br>"
+          + "You crank numbers and add formulas to your spreadsheets.";
+      if (Math.random() < 0.5) {
+        description += " The computer crashes a few times.";
+      }
+      world.Print(description
+                  + "<br>The morning goes by really fast. Your stomach begins "
+                  + "to growl.");
+      return;
+    }
+    if (murd.OFFICE.timeWorking == 1) {
+      if (!world.GetFlag(murd.flags.ateLunchFirstDay)) {
+        world.Print(
+            "You try to work further but it's pointless: you're too hungry to "
+            + "focus. Go grab a pizza or something?");
+        return;
+      }
+      murd.OFFICE.timeWorking++;
+      world.Print("You've won.");
+    }
+    world.Print("Internal error.");
+  },
   CanGet: function(world) {
     world.Print("It's too heavy. What would you do with it anyway?");
+    return false;
+  }
+});
+
+// Mostly a dummy object, but adds some color.
+murd.OFFICE_CHAIR = engine.MakeObject({
+  NAME: 'chair',
+  TITLE: 'your chair',
+  INITIAL_LOCATION: murd.OFFICE,
+  Description: function(world) {},
+  Use: function(world, onWhat) {
+    if (murd.OFFICE.sitting) {
+      world.Print("You're already sitting down on it.");
+      return;
+    }
+    murd.OFFICE.sitting = true;
+    world.Print("You sit down on your chair in front of the computer.");
+  },
+  CanGet: function(world) {
+    world.Print("You can't really take it with you, that'd be weird.");
+    return false;
+  }
+});
+
+// Mostly a dummy object, but adds some color.
+murd.OFFICE_DESK = engine.MakeObject({
+  NAME: 'desk',
+  TITLE: 'your desk',
+  INITIAL_LOCATION: murd.OFFICE,
+  Description: function(world) {},
+  Use: function(world, onWhat) {
+    world.Print("Umm, nah.");
+  },
+  CanGet: function(world) {
+    world.Print("It's too heavy.");
     return false;
   }
 });
@@ -504,4 +592,6 @@ murd.Game.prototype.OBJECTS = [
   murd.SHOWER,
   murd.RESTROOM_WINDOW,
   murd.COMPUTER,
+  murd.OFFICE_CHAIR,
+  murd.OFFICE_DESK,
 ];
