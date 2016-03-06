@@ -378,6 +378,10 @@ murd.SHOWER = engine.MakeObject({
                   + "shower is enough.");
       return true;
     }
+    if (murd.WALLET.location == world.INVENTORY) {
+      world.Print("Not while holding my wallet, that would ruin it!");
+      return false;
+    }
     world.SetFlag(murd.flags.showered, true);
     world.Print(
         "You take your clothes off and take a quick shower. The water feels "
