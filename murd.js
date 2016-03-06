@@ -272,7 +272,7 @@ murd.ENGE = engine.MakeRoom({
         + "built with granite from Ticino. Thousands of people commute here "
         + "everyday, going through the imposing facade.<br>"
         + DescriptionTrainLines(murd.ENGE)
-        + "From here you can reach your office easily.";
+        + "You can walk outside to Tessinerplatz.";
   },
   CanEnter: function(world) {
     if (world.location == murd.WIEDIKON) {
@@ -286,19 +286,20 @@ murd.ENGE = engine.MakeRoom({
     return true;
   },
   CanLeave: function(world, toRoom) {
-    if (toRoom == murd.OFFICE) {
+    if (toRoom == murd.TESSINERPLATZ) {
       return true;
     }
     if (toRoom == murd.WIEDIKON) {
       world.Print("Why would you go back now? You didn't forget anything.");
     } else {
       world.Print(
-          "There's no time for that! You really should get to the office now.");
+          "There's no time for that! Now you really should get to your office, "
+          + "which is a few blocks from Tessinerplatz.");
     }
     return false;
   },
   Exits: function(world) {
-    return ExitsTrainLines(murd.ENGE, {'office': true});
+    return ExitsTrainLines(murd.ENGE, {'tessinerplatz': true});
   }
 });
 
@@ -320,6 +321,18 @@ murd.OERLIKON = engine.MakeRoom({
   Description: function(world) {},
 });
 
+murd.TESSINERPLATZ = engine.MakeRoom({
+  NAME: 'tessinerplatz',
+  TITLE: 'Tessinerplatz',
+  Description: function(world) {
+    return "You're in a beautiful square in front of the Enge train station. "
+           + "From here you can walk to your office.";
+  },
+  Exits: function(world) {
+    return {'enge': true, 'office': true};
+  }
+});
+
 murd.OFFICE = engine.MakeRoom({
   NAME: 'office',
   TITLE: 'the office',
@@ -333,6 +346,10 @@ murd.OFFICE = engine.MakeRoom({
     description +=
         this.sitting ? "the chair on which you're sitting" : "a chair";
     description += ", and an old computer.";
+    if (this.timeWorking == 1) {
+      // As a hint.
+      description += " From here you can easily reach Tessinerplatz.";
+    }
     return description;
   },
   DescribeObjects: function(world, objects) {
@@ -358,7 +375,7 @@ murd.OFFICE = engine.MakeRoom({
     return false;
   },
   Exits: function(world) {
-    return {'enge': true};
+    return {'tessinerplatz': true};
   }
 });
 
@@ -584,6 +601,7 @@ murd.Game.prototype.ROOMS = [
   murd.HAUPTBAHNHOF,
   murd.AIRPORT,
   murd.OERLIKON,
+  murd.TESSINERPLATZ,
   murd.OFFICE,
 ];
 murd.Game.prototype.OBJECTS = [
