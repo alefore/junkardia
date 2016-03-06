@@ -421,6 +421,7 @@ murd.RESTROOM_WINDOW = engine.MakeObject({
   NAME: 'window',
   TITLE: 'a window',
   INITIAL_LOCATION: murd.RESTROOM,
+  Description: function(world) {},
   Use: function(world, onWhat) {
     (murd.RESTROOM.windowOpen ? this.Close : this.Open)(world);
   },
