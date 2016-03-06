@@ -94,7 +94,6 @@ murd.RESTROOM = engine.MakeRoom({
 
   Description: function(world) {
     var description = "The blue tiles in the restroom are a bit cold.";
-    var isShowerWet = world.GetFlag(murd.flags.showered) ? " wet" : "";
     if (this.windowOpen) {
       if (this.descriptionCount % 2 == 0) {
         description +=
@@ -104,11 +103,8 @@ murd.RESTROOM = engine.MakeRoom({
                        + "makes you shiver.";
       }
       this.descriptionCount++;
-      description += " There's a" + isShowerWet + " shower here.";
     } else {
-      description +=
-          " The restroom smells a bit. There's a window and a" + isShowerWet
-          + " shower here.";
+      description += " The restroom smells a bit. There's a window here.";
     }
     return description;
   },
@@ -386,6 +382,7 @@ murd.SHOWER = engine.MakeObject({
       return false;
     }
     world.SetFlag(murd.flags.showered, true);
+    this.TITLE = 'a wet shower';
     world.Print(
         "You take your clothes off and take a quick shower. The water feels "
         + "refreshing. After showering, you dry yourself with a towel and put "
