@@ -3,6 +3,11 @@ var murd = {};
 murd.flags = {};
 murd.flags.showered = 'showered';
 
+function isShowerCommand(verb, words) {
+  return verb == 'shower'
+      || ((verb == 'use' || verb == 'take') && words[0] == 'shower');
+}
+
 murd.BEDROOM = engine.MakeRoom({
   NAME: 'bedroom',
   TITLE: 'your bedroom',
@@ -51,6 +56,16 @@ murd.BEDROOM = engine.MakeRoom({
     return true;
   },
 
+  HandleAction: function(world, verb, words) {
+    if (isShowerCommand(verb, words)) {
+      world.Print(
+          "I can't do that in the bedroom, but I think there's a shower in the "
+          + "restroom.");
+      return true;
+    }
+    return false;
+  },
+
   Exits: function(world) {
     return {'restroom': true, 'street': true}
   },
@@ -96,11 +111,7 @@ murd.RESTROOM = engine.MakeRoom({
     return {'bedroom': true}
   },
   HandleAction: function(world, verb, words) {
-    if (verb == 'shower') {
-      murd.SHOWER.Use(world);
-      return true;
-    }
-    if ((verb == 'use' || verb == 'take') && words[0] == 'shower') {
+    if (isShowerCommand(verb, words)) {
       murd.SHOWER.Use(world);
       return true;
     }
