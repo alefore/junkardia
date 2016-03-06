@@ -359,7 +359,7 @@ murd.OFFICE = engine.MakeRoom({
   },
 
   Description: function(world) {
-    var description = "In your cubicle there's a desk, ";
+    var description = "In your cubicle there's a desk, a photo, ";
     description +=
         this.sitting ? "the chair on which you're sitting" : "a chair";
     description += ", and an old computer.";
@@ -381,7 +381,7 @@ murd.OFFICE = engine.MakeRoom({
     for (var i in objects) {
       var obj = objects[i];
       if (obj == murd.OFFICE_CHAIR || obj == murd.OFFICE_DESK
-          || obj == murd.COMPUTER) {
+          || obj == murd.COMPUTER || obj == murd.OFFICE_PHOTO) {
         continue;  // They're already in the description.
       }
       out.push(obj)
@@ -406,6 +406,7 @@ murd.OFFICE = engine.MakeRoom({
     if (this.timeWorking == 1) {
       if (world.GetFlag(murd.flags.foodEaten) == 0) {
         this.sitting = false;
+        murd.OFFICE_PHOTO.dropIfHeld(world);
         return true;
       }
       world.Print("Your lunch break is over, time to get back to your "
@@ -418,6 +419,7 @@ murd.OFFICE = engine.MakeRoom({
       return false;
     }
     if (this.timeWorking == 3) {
+      murd.OFFICE_PHOTO.dropIfHeld(world);
       world.Print(
           "You try to take the lift down but it appears to be out of service. "
           + "Ugh, you'll have to take the stairs.<br>"
@@ -684,6 +686,27 @@ murd.OFFICE_DESK = engine.MakeObject({
   }
 });
 
+// Mostly a dummy object, but adds some color.
+murd.OFFICE_PHOTO = engine.MakeObject({
+  NAME: 'photo',
+  TITLE: 'a photo in a beautiful frame',
+  INITIAL_LOCATION: murd.OFFICE,
+  Description: function(world) {
+    return "A photo of your vacation in Bali.";
+  },
+  Use: function(world, onWhat) {
+    murd.OFFICE.sitting = false;
+    world.Print(
+        "You look at the photo. It's a beautiful beach from your vacation in "
+        + "Bali. It helps you relax.");
+  },
+  dropIfHeld: function(world) {
+    if (murd.OFFICE_PHOTO.location != world.INVENTORY) { return; }
+    world.Print("You set the photo back on the desk.");
+    murd.OFFICE_PHOTO.location = murd.OFFICE;
+  }
+});
+
 murd.PIZZA = engine.MakeObject({
   NAME: 'pizza',
   TITLE: 'a slice of pizza',
@@ -780,5 +803,6 @@ murd.Game.prototype.OBJECTS = [
   murd.COMPUTER,
   murd.OFFICE_CHAIR,
   murd.OFFICE_DESK,
+  murd.OFFICE_PHOTO,
   murd.PIZZA,
 ];
