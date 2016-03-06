@@ -345,6 +345,16 @@ murd.TESSINERPLATZ = engine.MakeRoom({
            + "train station. From here you can walk to your office or to the "
            + "pizzeria.";
   },
+  CanEnter: function(world) {
+    if (world.location == murd.OFFICE) {
+      world.Print("You take the lift down.");
+    } else if (world.location == murd.ENGE) {
+      world.Print("You walk out of the train station.");
+    } else if (world.location == murd.PIZZERIA) {
+      world.Print("You leave the pizzeria.");
+    }
+    return true;
+  },
   Exits: function(world) {
     return {'enge': true, 'office': true, 'pizzeria': true};
   }
