@@ -96,23 +96,15 @@ murd.RESTROOM = engine.MakeRoom({
     return {'bedroom': true}
   },
   HandleAction: function(world, verb, words) {
-    if (verb != 'use' && verb != 'take' && verb != 'shower') {
-      return false
-    }
-    if (words[0] !== 'shower' && verb != 'shower') {
-      return false;
-    }
-    if (world.GetFlag(murd.flags.showered)) {
-      world.Print("You remember last month's water bill," +
-          " and decide that one shower is enough.");
+    if (verb == 'shower') {
+      murd.SHOWER.Use(world);
       return true;
     }
-    world.SetFlag(murd.flags.showered, true);
-    world.Print(
-        "You take your clothes off and take a quick shower. The water feels "
-        + "refreshing. After showering, you dry yourself with a towel and put "
-        + "on your banker suit.");
-    return true;
+    if ((verb == 'use' || verb == 'take') && words[0] == 'shower') {
+      murd.SHOWER.Use(world);
+      return true;
+    }
+    return false;
   },
 });
 
@@ -353,6 +345,30 @@ murd.LINT = engine.MakeObject({
   },
 });
 
+murd.SHOWER = engine.MakeObject({
+  NAME: 'shower',
+  TITLE: 'a shower',
+  INITIAL_LOCATION: murd.RESTROOM,
+  Description: function(world) {
+  },
+  Use: function(world, onWhat) {
+    if (world.GetFlag(murd.flags.showered)) {
+      world.Print("Remembering last month's water bill, you decide that one "
+                  + "shower is enough.");
+      return true;
+    }
+    world.SetFlag(murd.flags.showered, true);
+    world.Print(
+        "You take your clothes off and take a quick shower. The water feels "
+        + "refreshing. After showering, you dry yourself with a towel and put "
+        + "on your banker suit.");
+  },
+  CanGet: function(world) {
+    this.Use(world, null);
+    return false;
+  },
+});
+
 murd.COMPUTER = engine.MakeObject({
   NAME: 'computer',
   TITLE: 'your old computer',
@@ -431,5 +447,6 @@ murd.Game.prototype.ROOMS = [
 murd.Game.prototype.OBJECTS = [
   murd.WALLET,
   murd.LINT,
+  murd.SHOWER,
   murd.COMPUTER,
 ];
