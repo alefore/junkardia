@@ -477,6 +477,7 @@ murd.JAIL = engine.MakeRoom({
   TITLE: 'jail',
   Init: function() {
     this.mouseVisible = true;
+    this.crackVisible = false;
   },
   Description: function(world) {
     return "You're in an empty prison cell. "
@@ -499,6 +500,9 @@ murd.JAIL = engine.MakeRoom({
     for (var i in objects) {
       var obj = objects[i];
       if (obj == murd.JAIL_MOUSE && !this.mouseVisible) {
+        continue;
+      }
+      if (obj == murd.JAIL_CRACK && !this.crackVisible) {
         continue;
       }
       out.push(obj)
@@ -881,6 +885,44 @@ murd.JAIL_MOUSE = engine.MakeObject({
   }
 });
 
+murd.JAIL_POSTER = engine.MakeObject({
+  NAME: 'poster',
+  TITLE: 'a poster of a rock band',
+  INITIAL_LOCATION: murd.JAIL,
+  Description: function(world) {
+    return "It's a poster of a rock band. You don't know who they are. They "
+        + "have very long hair.";
+  },
+  Use: function(world, onWhat) {
+    world.Print("You look at the poster and imagine you're free.");
+  },
+  CanGet: function(world) {
+    world.Print(
+        "You carefully take the poster off the wall. It tears down a bit.<br>"
+        + "There's a small crack behind the poster.");
+    murd.JAIL.crackVisible = true;
+    // TODO: Inhibit "Ok".
+    return true;
+  },
+});
+
+murd.JAIL_CRACK = engine.MakeObject({
+  NAME: 'crack',
+  TITLE: 'a small crack in the wall',
+  INITIAL_LOCATION: murd.JAIL,
+  Use: function(world, onWhat) {
+    world.Print(pickRandomMessage([
+        "Unfortunately, it is too small.",
+        "Maybe it would work if you were a mouse.",
+        "You can barely fit a finger in there.",
+        "For what? To escape? It's way too narrow."]));
+  },
+  CanGet: function(world) {
+    world.Print("Eh? Na-ah.");
+    return false;
+  }
+});
+
 murd.Game = function() {
   this.START_LOCATION = murd.BEDROOM;
   this.INTRO = 'The game is afoot.<br>You are in your bedroom.'
@@ -947,4 +989,6 @@ murd.Game.prototype.OBJECTS = [
   murd.PIZZA,
   murd.JAIL_BED,
   murd.JAIL_MOUSE,
+  murd.JAIL_POSTER,
+  murd.JAIL_CRACK,
 ];
