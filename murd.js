@@ -53,6 +53,13 @@ murd.BEDROOM = engine.MakeRoom({
     return out;
   },
 
+  CanEnter: function(world) {
+    if (world.location == murd.BRUPBACHERPLATZ) {
+      world.Print("You climb up the stairs to your apartment.");
+    }
+    return true;
+  },
+
   CanLeave: function(world, toRoom) {
     if (toRoom == murd.BRUPBACHERPLATZ) {
       if (!world.GetFlag(murd.flags.showered)) {
@@ -782,7 +789,8 @@ murd.OFFICE_PHOTO = engine.MakeObject({
   dropIfHeld: function(world) {
     if (murd.OFFICE_PHOTO.location != world.INVENTORY) { return; }
     world.Print("You set the photo back on the desk.");
-    murd.OFFICE_PHOTO.location = murd.OFFICE;
+    // TODO: Inhibit the "Ok" message below.
+    world.Drop(murd.OFFICE_PHOTO);
   }
 });
 
