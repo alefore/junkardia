@@ -5,6 +5,9 @@ murd.flags.showered = 'showered';
 // A counter of the number of units of food eaten (each action that consumes a
 // food item should increment it).
 murd.flags.foodEaten = 'foodEaten';
+// Did we already warn him that he should have his wallet (train pass) whenever
+// he rides a train?
+murd.warnedTrainPass = 'warnedTrainPass';
 
 function isShowerCommand(verb, words) {
   return verb == 'shower'
@@ -246,9 +249,19 @@ murd.WIEDIKON = engine.MakeRoom({
     }
     if (toRoom == murd.ENGE) {
       if (world.INVENTORY.objects.indexOf(murd.WALLET) == -1) {
+        if (!world.GetFlag(murd.flags.warnedTrainPass)) {
+          world.SetFlag(murd.flags.warnedTrainPass, true);
+          world.Print(
+              "Oh, dang: looks like you forgot your wallet, which has your "
+              + "train pass. You shouldn't ride the trains without it.");
+          return false;
+        }
         world.Print(
-            "Oh, dang: looks like you forgot your wallet, which has your "
-            + "train pass.");
+            "You board your train without your train pass. A guard from the "
+            + "train company comes by and arrests you.<br>"
+            + "<h1>Game over!</h1>");
+        world.location = murd.JAIL;
+        world.DescribeRoom();
         return false;
       }
       return true;  // That's where we want him to go.
@@ -442,6 +455,29 @@ murd.OFFICE = engine.MakeRoom({
   },
   Exits: function(world) {
     return {'tessinerplatz': true};
+  }
+});
+
+murd.JAIL = engine.MakeRoom({
+  NAME: 'jail',
+  TITLE: 'jail',
+  Init: function() {
+    this.mouseVisible = true;
+  },
+  Description: function(world) {
+    return "An empty prison cell. There's nothing to do and nowhere to go. "
+           + "You've lost.";
+  },
+  DescribeObjects: function(world, objects) {
+    var out = []
+    for (var i in objects) {
+      var obj = objects[i];
+      if (obj == murd.JAIL_MOUSE && !this.mouseVisible) {
+        continue;
+      }
+      out.push(obj)
+    }
+    return out;
   }
 });
 
@@ -767,6 +803,46 @@ murd.PIZZA = engine.MakeObject({
   }
 });
 
+murd.JAIL_BED = engine.MakeObject({
+  NAME: 'bed',
+  TITLE: 'a crappy bed',
+  INITIAL_LOCATION: murd.JAIL,
+  Use: function(world, onWhat) {
+    var messages = [
+        "You lay down on the bed and fail to fall asleep.",
+        "You lay down and get some rest.",
+        "You lay down and close your eyes. Sleep doesn't come.",
+        "You fall asleep and dream of a hut in the Alps.",
+        "You sleep. You dream of a slice of pizza margherita.",
+        "You close your eyes and count sheep. You get to seven hundred fourty "
+        + "two before you give up.",
+        "You manage to sleep. You have a strange dream where you're drinking "
+        + "with your colleagues and taking turn hammering nails."];
+    world.Print(messages[Math.floor(Math.random() * messages.length)]);
+    if (!murd.JAIL.mouseVisible && Math.random() > 0.2) {
+      murd.JAIL.mouseVisible = true;
+      world.Print("The mouse returns in the meantime.");
+    }
+  },
+  CanGet: function(world) {
+    world.Print("It's bolted to the floor.");
+    return false;
+  }
+});
+
+murd.JAIL_MOUSE = engine.MakeObject({
+  NAME: 'mouse',
+  TITLE: 'a little mouse',
+  INITIAL_LOCATION: murd.JAIL,
+  Use: function(world, onWhat) {
+    world.Print("You'd have to catch it first.");
+  },
+  CanGet: function(world) {
+    world.Print("The mouse disappears behind the bars.");
+    murd.JAIL.mouseVisible = false;
+  }
+});
+
 murd.Game = function() {
   this.START_LOCATION = murd.BEDROOM;
   this.INTRO = 'The game is afoot.<br>You are in your bedroom.'
@@ -818,6 +894,7 @@ murd.Game.prototype.ROOMS = [
   murd.TESSINERPLATZ,
   murd.PIZZERIA,
   murd.OFFICE,
+  murd.JAIL,
 ];
 murd.Game.prototype.OBJECTS = [
   murd.WALLET,
@@ -830,4 +907,6 @@ murd.Game.prototype.OBJECTS = [
   murd.OFFICE_DESK,
   murd.OFFICE_PHOTO,
   murd.PIZZA,
+  murd.JAIL_BED,
+  murd.JAIL_MOUSE,
 ];
