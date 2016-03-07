@@ -71,6 +71,7 @@ murd.BEDROOM = engine.MakeRoom({
         world.Print('You should turn that stupid alarm clock off first.');
         return false;
       }
+      murd.BEDROOM_PLANT.dropIfHeld(world);
     }
     return true;
   },
@@ -581,6 +582,31 @@ murd.LINT = engine.MakeObject({
   },
 });
 
+murd.BEDROOM_PLANT = engine.MakeObject({
+  NAME: 'orchid',
+  TITLE: 'an orchid growing on a yellow pot',
+  INITIAL_LOCATION: murd.BEDROOM,
+  Description: function(world) {
+    return pickRandomMessage([
+        "A sad-looking orchid that hasn't flowered in many years.",
+        "It has seen better days, but at least it's still alive.",
+        "It has some green leaves but no flowers."]);
+  },
+  Use: function(world, onWhat) {
+    world.Print(pickRandomMessage([
+        "You look at the orchid for a few seconds. It's supposed to "
+        + "cheer you up but it doesn't really work.",
+        "For what? It's not edible.",
+        "You have no use for the orchid now."]));
+  },
+  dropIfHeld: function(world) {
+    if (murd.BEDROOM_PLANT.location != world.INVENTORY) { return; }
+    world.Print("You set the orchid down. It belongs in your apartment.");
+    // TODO: Inhibit the "Ok" message below.
+    world.Drop(murd.BEDROOM_PLANT);
+  }
+});
+
 murd.SHOWER = engine.MakeObject({
   NAME: 'shower',
   TITLE: 'a shower',
@@ -595,6 +621,11 @@ murd.SHOWER = engine.MakeObject({
     }
     if (murd.WALLET.location == world.INVENTORY) {
       world.Print("Not while holding my wallet, that would ruin it!");
+      return false;
+    }
+    if (murd.BEDROOM_PLANT.location == world.INVENTORY) {
+      world.Print("I should drop the orchid first, I think it likes water but "
+                  + "showering with it seems a bit excessive.");
       return false;
     }
     world.SetFlag(murd.flags.showered, true);
@@ -978,15 +1009,21 @@ murd.Game.prototype.ROOMS = [
 ];
 murd.Game.prototype.OBJECTS = [
   murd.WALLET,
+  murd.BEDROOM_PLANT,
   murd.LINT,
+
   murd.SHOWER,
   murd.RESTROOM_WINDOW,
+
   murd.TESSINERPLATZ_FOUNTAIN,
+
   murd.COMPUTER,
   murd.OFFICE_CHAIR,
   murd.OFFICE_DESK,
   murd.OFFICE_PHOTO,
+
   murd.PIZZA,
+
   murd.JAIL_BED,
   murd.JAIL_MOUSE,
   murd.JAIL_POSTER,
