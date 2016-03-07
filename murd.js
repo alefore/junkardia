@@ -33,7 +33,8 @@ murd.BEDROOM = engine.MakeRoom({
       description += " The annoying alarm clock is beeping loudly."
     }
     description +=
-        " Two doors are here, one leads to the restroom and one to the street.";
+        " Two doors are here, one leads to the restroom and one down to "
+        + "Brupbacherplatz.";
     return description;
   },
 
@@ -53,14 +54,14 @@ murd.BEDROOM = engine.MakeRoom({
   },
 
   CanLeave: function(world, toRoom) {
-    if (toRoom == murd.STREET) {
-      if (this.alarmClockOn) {
-        world.Print('You should turn that stupid alarm clock off first.');
-        return false;
-      }
+    if (toRoom == murd.BRUPBACHERPLATZ) {
       if (!world.GetFlag(murd.flags.showered)) {
         world.Print(
             "Hmm, you should probably take a shower first. You smell a bit.");
+        return false;
+      }
+      if (this.alarmClockOn) {
+        world.Print('You should turn that stupid alarm clock off first.');
         return false;
       }
     }
@@ -88,7 +89,7 @@ murd.BEDROOM = engine.MakeRoom({
   },
 
   Exits: function(world) {
-    return {'restroom': true, 'street': true}
+    return {'restroom': true, 'brupbacherplatz': true}
   },
 });
 
@@ -163,12 +164,12 @@ murd.RESTROOM = engine.MakeRoom({
 });
 
 // TODO: Add a mailbox, with some stuff that becomes critical later in the game?
-murd.STREET = engine.MakeRoom({
-  NAME: 'street',
-  TITLE: 'the street',
+murd.BRUPBACHERPLATZ = engine.MakeRoom({
+  NAME: 'brupbacherplatz',
+  TITLE: 'the Brupbacherplatz square',
   Description: function(world) {
     return "You're in a small park. From here you can go back into your "
-           + "bedroom, to the local bar, or to the wiedikon train station.";
+           + "bedroom, to the local bar, or to the Wiedikon train station.";
   },
   CanEnter: function(world) {
     if (world.location == murd.BEDROOM) {
@@ -242,14 +243,15 @@ murd.WIEDIKON = engine.MakeRoom({
     return "You're in Wiedikon, a small train station.<br>"
            + DescriptionTrainLines(murd.WIEDIKON)
            + "The station has a big clock, always on time. Damn, unlike it, "
-           + "you're running late.";
+           + "you're running late.<br>"
+           + "You can walk to Brupbacherplatz from here.";
   },
   CanEnter: function(world) {
     world.Print("You enter the Wiedikon train station.");
     return true;
   },
   CanLeave: function(world, toRoom) {
-    if (toRoom == murd.STREET) {
+    if (toRoom == murd.BRUPBACHERPLATZ) {
       return true;  // Okay, why not.
     }
     if (toRoom == murd.ENGE) {
@@ -277,7 +279,7 @@ murd.WIEDIKON = engine.MakeRoom({
     return false;
   },
   Exits: function(world) {
-    return ExitsTrainLines(murd.WIEDIKON, {'street': true});
+    return ExitsTrainLines(murd.WIEDIKON, {'brupbacherplatz': true});
   }
 });
 
@@ -912,7 +914,7 @@ murd.Game.prototype.HandleAction = function(world, verb, words) {
 murd.Game.prototype.ROOMS = [
   murd.BEDROOM,
   murd.RESTROOM,
-  murd.STREET,
+  murd.BRUPBACHERPLATZ,
   murd.BAR,
   murd.WIEDIKON,
   murd.ENGE,
