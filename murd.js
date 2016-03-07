@@ -9,6 +9,11 @@ murd.flags.foodEaten = 'foodEaten';
 // he rides a train?
 murd.warnedTrainPass = 'warnedTrainPass';
 
+// Given an array of messages, selects an returns one randomly.
+function pickRandomMessage(options) {
+  return options[Math.floor(Math.random() * options.length)];
+}
+
 function isShowerCommand(verb, words) {
   return verb == 'shower'
       || ((verb == 'use' || verb == 'take') && words[0] == 'shower');
@@ -465,8 +470,20 @@ murd.JAIL = engine.MakeRoom({
     this.mouseVisible = true;
   },
   Description: function(world) {
-    return "An empty prison cell. There's nothing to do and nowhere to go. "
+    return "You're in an empty prison cell. "
+           + "There's nothing to do and nowhere to go. "
            + "You've lost.";
+  },
+  HandleAction: function(world, verb, words) {
+    if (verb == "catch" && words[0] == "mouse") {
+      murd.JAIL_MOUSE.CanGet(world);
+      return true;
+    }
+    if (verb == "sleep") {
+      murd.JAIL_BED.Use(world);
+      return true;
+    }
+    return false;
   },
   DescribeObjects: function(world, objects) {
     var out = []
@@ -808,7 +825,7 @@ murd.JAIL_BED = engine.MakeObject({
   TITLE: 'a crappy bed',
   INITIAL_LOCATION: murd.JAIL,
   Use: function(world, onWhat) {
-    var messages = [
+    world.Print(pickRandomMessage([
         "You lay down on the bed and fail to fall asleep.",
         "You lay down and get some rest.",
         "You lay down and close your eyes. Sleep doesn't come.",
@@ -817,11 +834,13 @@ murd.JAIL_BED = engine.MakeObject({
         "You close your eyes and count sheep. You get to seven hundred fourty "
         + "two before you give up.",
         "You manage to sleep. You have a strange dream where you're drinking "
-        + "with your colleagues and taking turn hammering nails."];
-    world.Print(messages[Math.floor(Math.random() * messages.length)]);
+        + "with your colleagues and taking turn hammering nails."]));
     if (!murd.JAIL.mouseVisible && Math.random() > 0.2) {
       murd.JAIL.mouseVisible = true;
-      world.Print("The mouse returns in the meantime.");
+      world.Print(pickRandomMessage([
+          "The mouse returns in the meantime.",
+          "The mouse reappears.",
+          "As you open your eyes, you see that the mouse is back."]));
     }
   },
   CanGet: function(world) {
@@ -838,8 +857,17 @@ murd.JAIL_MOUSE = engine.MakeObject({
     world.Print("You'd have to catch it first.");
   },
   CanGet: function(world) {
-    world.Print("The mouse disappears behind the bars.");
+    if (!murd.JAIL.mouseVisible) {
+      world.Print(pickRandomMessage([
+          "The mouse is nowhere to be seen.",
+          "The mouse is gone."]));
+      return false;
+    }
+    world.Print(pickRandomMessage([
+        "As you approach him, the mouse disappears behind the bars.",
+        "The mouse flees from you, disappearing behind the bars."]));
     murd.JAIL.mouseVisible = false;
+    return false;
   }
 });
 
