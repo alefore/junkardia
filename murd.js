@@ -111,6 +111,7 @@ murd.RESTROOM = engine.MakeRoom({
     // Used to alternate the messages in the description after the window is
     // open.
     this.descriptionCount = 0;
+    this.toothBrushUsed = false;
   },
 
   Description: function(world) {
@@ -148,6 +149,10 @@ murd.RESTROOM = engine.MakeRoom({
       return false;
     }
     world.Print('You enter the restroom.');
+    return true;
+  },
+  CanLeave: function(world, toRoom) {
+    murd.TOOTH_BRUSH.dropIfHeld(world);
     return true;
   },
   Exits: function(world) {
@@ -628,6 +633,7 @@ murd.SHOWER = engine.MakeObject({
                   + "showering with it seems a bit excessive.");
       return false;
     }
+    murd.TOOTH_BRUSH.dropIfHeld(world);
     world.SetFlag(murd.flags.showered, true);
     this.TITLE = 'a wet shower';
     world.Print(
@@ -669,6 +675,30 @@ murd.RESTROOM_WINDOW = engine.MakeObject({
     murd.RESTROOM.windowOpen = false;
     world.Print("You close the window.");
   },
+});
+
+murd.TOOTH_BRUSH = engine.MakeObject({
+  NAME: 'toothbrush',
+  TITLE: 'a red toothbrush',
+  INITIAL_LOCATION: murd.RESTROOM,
+  Description: function(world) {
+    return "A red toothbrush. It's a bit old.";
+  },
+  Use: function(world, onWhat) {
+    if (murd.RESTROOM.toothBrushUsed) {
+      world.Print("Your teeth are already spotless.");
+      return;
+    }
+    murd.RESTROOM.toothBrushUsed = true;
+    world.Print("You grab the brush and attack the plaque with it. It leaves a "
+                + "refreshing mint scent in your mouth.");
+  },
+  dropIfHeld: function(world) {
+    if (murd.TOOTH_BRUSH.location != world.INVENTORY) { return; }
+    world.Print("You set the toothbrush by the sink.");
+    // TODO: Inhibit the "Ok" message below.
+    world.Drop(murd.TOOTH_BRUSH);
+  }
 });
 
 murd.TESSINERPLATZ_FOUNTAIN = engine.MakeObject({
@@ -1014,6 +1044,7 @@ murd.Game.prototype.OBJECTS = [
 
   murd.SHOWER,
   murd.RESTROOM_WINDOW,
+  murd.TOOTH_BRUSH,
 
   murd.TESSINERPLATZ_FOUNTAIN,
 
