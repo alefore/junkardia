@@ -96,13 +96,12 @@ engine.World.prototype.DescribeRoom = function() {
   this.Print(this.location.Description(this));
 
   var objects = this.roomObjects[this.location.NAME].slice(0);
-  this.DescribeObjects(objects);
-};
-
-engine.World.prototype.DescribeObjects = function(objects) {
   objects = this.location.DescribeObjects(this, objects);
-  this.game.DescribeObjects(this, objects);
-}
+  for (var i in objects) {
+    var obj = objects[i];
+    this.Print(obj.Overview(this));
+  }
+};
 
 engine.World.prototype.Enter = function(room) {
   if (room === this.location) {
@@ -141,12 +140,12 @@ engine.World.prototype.LookAction = function(words) {
   } else {
     var obj = this.LocateObject(words);
     if (obj != null) {
-      if (obj.location == this.INVENTORY) {
-        this.Print(obj.Description(this));
-      } else if (obj.location != this.location) {
+      // TODO(bubble): rework inventory.
+      if (obj.location != this.location
+          && obj.location != this.INVENTORY) {
         this.game.NotHere(this, obj);
       } else {
-        this.DescribeObjects([obj]);
+        this.Print(obj.Detail(this));
       }
     } else {
       this.game.UnknownObject(this, words.join(' '));
@@ -367,6 +366,12 @@ engine.MakeRoom = function(data) {
 engine.Object = function() {};
 engine.Object.prototype = new engine.Entity();
 engine.Object.prototype.INITIAL_LOCATION = null;
+engine.Object.prototype.Overview = function(world) {
+  return 'You see ' + this.TITLE + ' here.';
+};
+engine.Object.prototype.Detail = function(world) {
+  return this.Overview(world);
+};
 engine.Object.prototype.CanGet = function(world) {
   return true;
 };
@@ -426,13 +431,6 @@ engine.Game.prototype.ListInventory = function(world, objects) {
   }
   for (var i in objects) {
     world.Print(objects[i].TITLE + '.');
-  }
-};
-
-engine.Game.prototype.DescribeObjects = function(world, objects) {
-  for (var i in objects) {
-    var obj = objects[i];
-    world.Print('You see ' + obj.TITLE + ' here.');
   }
 };
 

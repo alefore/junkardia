@@ -1,13 +1,13 @@
 var murd = {};
 
 murd.flags = {};
-murd.flags.showered = 'showered';
+murd.flags.showered = "showered";
 // A counter of the number of units of food eaten (each action that consumes a
 // food item should increment it).
-murd.flags.foodEaten = 'foodEaten';
+murd.flags.foodEaten = "foodEaten";
 // Did we already warn him that he should have his wallet (train pass) whenever
 // he rides a train?
-murd.warnedTrainPass = 'warnedTrainPass';
+murd.warnedTrainPass = "warnedTrainPass";
 
 // Given an array of messages, selects an returns one randomly.
 function pickRandomMessage(options) {
@@ -15,13 +15,13 @@ function pickRandomMessage(options) {
 }
 
 function isShowerCommand(verb, words) {
-  return verb == 'shower'
-      || ((verb == 'use' || verb == 'take') && words[0] == 'shower');
+  return verb == "shower"
+      || ((verb == "use" || verb == "take") && words[0] == "shower");
 }
 
 murd.BEDROOM = engine.MakeRoom({
-  NAME: 'bedroom',
-  TITLE: 'your bedroom',
+  NAME: "bedroom",
+  TITLE: "your bedroom",
 
   Init: function() {
     this.alarmClockOn = true;
@@ -68,7 +68,7 @@ murd.BEDROOM = engine.MakeRoom({
         return false;
       }
       if (this.alarmClockOn) {
-        world.Print('You should turn that stupid alarm clock off first.');
+        world.Print("You should turn that stupid alarm clock off first.");
         return false;
       }
       murd.BEDROOM_PLANT.dropIfHeld(world);
@@ -97,13 +97,13 @@ murd.BEDROOM = engine.MakeRoom({
   },
 
   Exits: function(world) {
-    return {'restroom': true, 'brupbacherplatz': true}
+    return {"restroom": true, "brupbacherplatz": true}
   },
 });
 
 murd.RESTROOM = engine.MakeRoom({
-  NAME: 'restroom',
-  TITLE: 'the restroom',
+  NAME: "restroom",
+  TITLE: "the restroom",
 
   Init: function() {
     // TODO: Make this a property of RESTROOM_WINDOW.
@@ -144,11 +144,11 @@ murd.RESTROOM = engine.MakeRoom({
   },
 
   CanEnter: function(world) {
-    if (!world.GetFlag('restroomDoorOpen')) {
-      world.Print('The door is closed.');
+    if (!world.GetFlag("restroomDoorOpen")) {
+      world.Print("The door is closed.");
       return false;
     }
-    world.Print('You enter the restroom.');
+    world.Print("You enter the restroom.");
     return true;
   },
   CanLeave: function(world, toRoom) {
@@ -156,18 +156,18 @@ murd.RESTROOM = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {'bedroom': true}
+    return {"bedroom": true}
   },
   HandleAction: function(world, verb, words) {
     if (isShowerCommand(verb, words)) {
       murd.SHOWER.Use(world);
       return true;
     }
-    if (words[0] == 'window') {
-      if (verb == 'open') {
+    if (words[0] == "window") {
+      if (verb == "open") {
         murd.RESTROOM_WINDOW.Open(world);
         return true;
-      } else if (verb == 'close') {
+      } else if (verb == "close") {
         murd.RESTROOM_WINDOW.Close(world);
         return true;
       }
@@ -178,8 +178,8 @@ murd.RESTROOM = engine.MakeRoom({
 
 // TODO: Add a mailbox, with some stuff that becomes critical later in the game?
 murd.BRUPBACHERPLATZ = engine.MakeRoom({
-  NAME: 'brupbacherplatz',
-  TITLE: 'the Brupbacherplatz square',
+  NAME: "brupbacherplatz",
+  TITLE: "the Brupbacherplatz square",
   Description: function(world) {
     return "You're in a small park. From here you can go back into your "
            + "bedroom, to the local bar, or to the Wiedikon train station.";
@@ -195,13 +195,13 @@ murd.BRUPBACHERPLATZ = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {'bedroom': true, 'wiedikon': true, 'bar': true};
+    return {"bedroom": true, "wiedikon": true, "bar": true};
   }
 });
 
 murd.BAR = engine.MakeRoom({
-  NAME: 'bar',
-  TITLE: 'the bar',
+  NAME: "bar",
+  TITLE: "the bar",
 
   Init: function() {
     this.attempts = 0;
@@ -247,8 +247,8 @@ function ExitsTrainLines(room, exits) {
 }
 
 murd.WIEDIKON = engine.MakeRoom({
-  NAME: 'wiedikon',
-  TITLE: 'the Wiedikon train station',
+  NAME: "wiedikon",
+  TITLE: "the Wiedikon train station",
   TrainLines: function() {
     return ["Enge", "Oerlikon", "Airport", "Hauptbahnhof"];
   },
@@ -292,14 +292,14 @@ murd.WIEDIKON = engine.MakeRoom({
     return false;
   },
   Exits: function(world) {
-    return ExitsTrainLines(murd.WIEDIKON, {'brupbacherplatz': true});
+    return ExitsTrainLines(murd.WIEDIKON, {"brupbacherplatz": true});
   }
 });
 
 // TODO: Add a Kiosk inside the station?
 murd.ENGE = engine.MakeRoom({
-  NAME: 'enge',
-  TITLE: 'the Enge train station',
+  NAME: "enge",
+  TITLE: "the Enge train station",
   TrainLines: function() {
     return ["Wiedikon", "Oerlikon", "Airport", "Hauptbahnhof"];
   },
@@ -348,31 +348,31 @@ murd.ENGE = engine.MakeRoom({
     return false;
   },
   Exits: function(world) {
-    return ExitsTrainLines(murd.ENGE, {'tessinerplatz': true});
+    return ExitsTrainLines(murd.ENGE, {"tessinerplatz": true});
   }
 });
 
 murd.HAUPTBAHNHOF = engine.MakeRoom({
-  NAME: 'hauptbahnhof',
-  TITLE: 'the main train station in Zurich',
+  NAME: "hauptbahnhof",
+  TITLE: "the main train station in Zurich",
   Description: function(world) {},
 });
 
 murd.AIRPORT = engine.MakeRoom({
-  NAME: 'airport',
-  TITLE: 'the airport',
+  NAME: "airport",
+  TITLE: "the airport",
   Description: function(world) {},
 });
 
 murd.OERLIKON = engine.MakeRoom({
-  NAME: 'oerlikon',
-  TITLE: 'the oerlikon train station',
+  NAME: "oerlikon",
+  TITLE: "the oerlikon train station",
   Description: function(world) {},
 });
 
 murd.TESSINERPLATZ = engine.MakeRoom({
-  NAME: 'tessinerplatz',
-  TITLE: 'Tessinerplatz',
+  NAME: "tessinerplatz",
+  TITLE: "Tessinerplatz",
   Description: function(world) {
     return "You're in Tessinerplatz, a beautiful square in front of the Enge "
            + "train station. From here you can walk to your office or to the "
@@ -389,13 +389,13 @@ murd.TESSINERPLATZ = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {'enge': true, 'office': true, 'pizzeria': true};
+    return {"enge": true, "office": true, "pizzeria": true};
   }
 });
 
 murd.OFFICE = engine.MakeRoom({
-  NAME: 'office',
-  TITLE: 'the office',
+  NAME: "office",
+  TITLE: "the office",
   Init: function() {
     this.sitting = false;
     this.timeWorking = 0;
@@ -474,13 +474,13 @@ murd.OFFICE = engine.MakeRoom({
     }
   },
   Exits: function(world) {
-    return {'tessinerplatz': true};
+    return {"tessinerplatz": true};
   }
 });
 
 murd.JAIL = engine.MakeRoom({
-  NAME: 'jail',
-  TITLE: 'jail',
+  NAME: "jail",
+  TITLE: "jail",
   Init: function() {
     this.mouseVisible = true;
     this.crackVisible = false;
@@ -518,8 +518,8 @@ murd.JAIL = engine.MakeRoom({
 });
 
 murd.PIZZERIA = engine.MakeRoom({
-  NAME: 'pizzeria',
-  TITLE: 'the pizzeria',
+  NAME: "pizzeria",
+  TITLE: "the pizzeria",
   Init: function() {
     // So that if he drops the pizza and takes it again, we don't show him
     // paying again.
@@ -540,20 +540,24 @@ murd.PIZZERIA = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {'tessinerplatz': true};
+    return {"tessinerplatz": true};
   },
 });
 
 murd.WALLET = engine.MakeObject({
-  NAME: 'wallet',
-  TITLE: 'your wallet',
+  NAME: "wallet",
+  TITLE: "your wallet",
   INITIAL_LOCATION: murd.BEDROOM,
-  Description: function(world) {
-    return 'You have $23, a trains pass, and a credit card.'
+  Detail: function(world) {
+    if (this.location == world.INVENTORY) {
+      return "You have $23, a trains pass, and a credit card.";
+    }
+    return "It's an elegant Prada leather wallet. " + 
+      "Sadly, it's probably your most valuable possession.";
   },
   CanGet: function(world) {
     if (murd.BEDROOM.alarmClockOn) {
-      world.Print('I don\'t know what you are talking about...');
+      world.Print("I don't know what you are talking about...");
       return false;
     }
     return true;
@@ -561,11 +565,11 @@ murd.WALLET = engine.MakeObject({
 });
 
 murd.LINT = engine.MakeObject({
-  NAME: 'lint',
-  TITLE: 'some pocket lint',
+  NAME: "lint",
+  TITLE: "some pocket lint",
   INITIAL_LOCATION: null,
-  Description: function(world) {
-    return 'Maybe you should consider buying new pants.'
+  Detail: function(world) {
+    return "Maybe you should consider buying new pants."
   },
   Use: function(world, onWhat) {
     if (this.location != world.INVENTORY) {
@@ -578,20 +582,20 @@ murd.LINT = engine.MakeObject({
         return;
       }
       world.Print(
-          'You smear the lint on your wallet for no particular reason. ' + 
-          'The particles dissolve into oblivion.');
+          "You smear the lint on your wallet for no particular reason. " + 
+          "The particles dissolve into oblivion.");
       world.Destroy(this);
     } else {
-      world.Print('What for?');
+      world.Print("What for?");
     }
   },
 });
 
 murd.BEDROOM_PLANT = engine.MakeObject({
-  NAME: 'orchid',
-  TITLE: 'an orchid growing on a yellow pot',
+  NAME: "orchid",
+  TITLE: "an orchid growing on a yellow pot",
   INITIAL_LOCATION: murd.BEDROOM,
-  Description: function(world) {
+  Detail: function(world) {
     return pickRandomMessage([
         "A sad-looking orchid that hasn't flowered in many years.",
         "It has seen better days, but at least it's still alive.",
@@ -613,11 +617,9 @@ murd.BEDROOM_PLANT = engine.MakeObject({
 });
 
 murd.SHOWER = engine.MakeObject({
-  NAME: 'shower',
-  TITLE: 'a shower',
+  NAME: "shower",
+  TITLE: "a shower",
   INITIAL_LOCATION: murd.RESTROOM,
-  Description: function(world) {
-  },
   Use: function(world, onWhat) {
     if (world.GetFlag(murd.flags.showered)) {
       world.Print("Remembering last month's water bill, you decide that one "
@@ -635,7 +637,7 @@ murd.SHOWER = engine.MakeObject({
     }
     murd.TOOTH_BRUSH.dropIfHeld(world);
     world.SetFlag(murd.flags.showered, true);
-    this.TITLE = 'a wet shower';
+    this.TITLE = "a wet shower";
     world.Print(
         "You take your clothes off and take a quick shower. The water feels "
         + "refreshing. After showering, you dry yourself with a towel and put "
@@ -648,10 +650,9 @@ murd.SHOWER = engine.MakeObject({
 });
 
 murd.RESTROOM_WINDOW = engine.MakeObject({
-  NAME: 'window',
-  TITLE: 'a window',
+  NAME: "window",
+  TITLE: "a window",
   INITIAL_LOCATION: murd.RESTROOM,
-  Description: function(world) {},
   Use: function(world, onWhat) {
     (murd.RESTROOM.windowOpen ? this.Close : this.Open)(world);
   },
@@ -678,10 +679,10 @@ murd.RESTROOM_WINDOW = engine.MakeObject({
 });
 
 murd.TOOTH_BRUSH = engine.MakeObject({
-  NAME: 'toothbrush',
-  TITLE: 'a red toothbrush',
+  NAME: "toothbrush",
+  TITLE: "a red toothbrush",
   INITIAL_LOCATION: murd.RESTROOM,
-  Description: function(world) {
+  Detail: function(world) {
     return "A red toothbrush. It's a bit old.";
   },
   Use: function(world, onWhat) {
@@ -702,10 +703,9 @@ murd.TOOTH_BRUSH = engine.MakeObject({
 });
 
 murd.TESSINERPLATZ_FOUNTAIN = engine.MakeObject({
-  NAME: 'fountain',
-  TITLE: 'a fountain',
+  NAME: "fountain",
+  TITLE: "a fountain",
   INITIAL_LOCATION: murd.TESSINERPLATZ,
-  Description: function(world) {},
   Use: function(world, onWhat) {
     world.Print("You have no use for the fountain.");
   },
@@ -716,10 +716,10 @@ murd.TESSINERPLATZ_FOUNTAIN = engine.MakeObject({
 });
 
 murd.COMPUTER = engine.MakeObject({
-  NAME: 'computer',
-  TITLE: 'your old computer',
+  NAME: "computer",
+  TITLE: "your old computer",
   INITIAL_LOCATION: murd.OFFICE,
-  Description: function(world) {
+  Detail: function(world) {
     return "An old computer running Windows 98. You fight with spreadsheets "
            + "here all day.";
   },
@@ -802,10 +802,10 @@ murd.COMPUTER = engine.MakeObject({
 
 // Mostly a dummy object, but adds some color.
 murd.OFFICE_CHAIR = engine.MakeObject({
-  NAME: 'chair',
-  TITLE: 'your chair',
+  NAME: "chair",
+  TITLE: "your chair",
   INITIAL_LOCATION: murd.OFFICE,
-  Description: function(world) {
+  Detail: function(world) {
     return "A standard office chair.";
   },
   Use: function(world, onWhat) {
@@ -824,10 +824,9 @@ murd.OFFICE_CHAIR = engine.MakeObject({
 
 // Mostly a dummy object, but adds some color.
 murd.OFFICE_DESK = engine.MakeObject({
-  NAME: 'desk',
-  TITLE: 'your desk',
+  NAME: "desk",
+  TITLE: "your desk",
   INITIAL_LOCATION: murd.OFFICE,
-  Description: function(world) {},
   Use: function(world, onWhat) {
     world.Print("Umm, nah.");
   },
@@ -839,10 +838,10 @@ murd.OFFICE_DESK = engine.MakeObject({
 
 // Mostly a dummy object, but adds some color.
 murd.OFFICE_PHOTO = engine.MakeObject({
-  NAME: 'photo',
-  TITLE: 'a photo in a beautiful frame',
+  NAME: "photo",
+  TITLE: "a photo in a beautiful frame",
   INITIAL_LOCATION: murd.OFFICE,
-  Description: function(world) {
+  Detail: function(world) {
     return "A photo of your vacation in Bali.";
   },
   Use: function(world, onWhat) {
@@ -860,10 +859,10 @@ murd.OFFICE_PHOTO = engine.MakeObject({
 });
 
 murd.PIZZA = engine.MakeObject({
-  NAME: 'pizza',
-  TITLE: 'a slice of pizza',
+  NAME: "pizza",
+  TITLE: "a slice of pizza",
   INITIAL_LOCATION: murd.PIZZERIA,
-  Description: function(world) {
+  Detail: function(world) {
     return "A mediocre slice of pizza margherita from the Pizzera Tricolore.";
   },
   Use: function(world, onWhat) {
@@ -896,8 +895,8 @@ murd.PIZZA = engine.MakeObject({
 });
 
 murd.JAIL_BED = engine.MakeObject({
-  NAME: 'bed',
-  TITLE: 'a crappy bed',
+  NAME: "bed",
+  TITLE: "a crappy bed",
   INITIAL_LOCATION: murd.JAIL,
   Use: function(world, onWhat) {
     world.Print(pickRandomMessage([
@@ -925,8 +924,8 @@ murd.JAIL_BED = engine.MakeObject({
 });
 
 murd.JAIL_MOUSE = engine.MakeObject({
-  NAME: 'mouse',
-  TITLE: 'a little mouse',
+  NAME: "mouse",
+  TITLE: "a little mouse",
   INITIAL_LOCATION: murd.JAIL,
   Use: function(world, onWhat) {
     world.Print("You'd have to catch it first.");
@@ -947,10 +946,10 @@ murd.JAIL_MOUSE = engine.MakeObject({
 });
 
 murd.JAIL_POSTER = engine.MakeObject({
-  NAME: 'poster',
-  TITLE: 'a poster of a rock band',
+  NAME: "poster",
+  TITLE: "a poster of a rock band",
   INITIAL_LOCATION: murd.JAIL,
-  Description: function(world) {
+  Detail: function(world) {
     return "It's a poster of a rock band. You don't know who they are. They "
         + "have very long hair.";
   },
@@ -968,8 +967,8 @@ murd.JAIL_POSTER = engine.MakeObject({
 });
 
 murd.JAIL_CRACK = engine.MakeObject({
-  NAME: 'crack',
-  TITLE: 'a small crack in the wall',
+  NAME: "crack",
+  TITLE: "a small crack in the wall",
   INITIAL_LOCATION: murd.JAIL,
   Use: function(world, onWhat) {
     world.Print(pickRandomMessage([
@@ -986,29 +985,29 @@ murd.JAIL_CRACK = engine.MakeObject({
 
 murd.Game = function() {
   this.START_LOCATION = murd.BEDROOM;
-  this.INTRO = 'The game is afoot.<br>You are in your bedroom.'
+  this.INTRO = "The game is afoot.<br>You are in your bedroom."
 };
 murd.Game.prototype = new engine.Game();
 murd.Game.prototype.InitState = function(world) {
-  world.SetFlag('restroomDoorOpen', false);
-  world.SetFlag('foodEaten', 0);
+  world.SetFlag("restroomDoorOpen", false);
+  world.SetFlag("foodEaten", 0);
 };
 
 murd.Game.prototype.HandleAction = function(world, verb, words) {
-  if (verb == 'open') {
-    if (words[0] == 'door') {
-      if (!('restroom' in world.location.Exits())) {
+  if (verb == "open") {
+    if (words[0] == "door") {
+      if (!("restroom" in world.location.Exits())) {
         return false;
       }
-      world.SetFlag('restroomDoorOpen', true);
-      world.Print('Ok');
+      world.SetFlag("restroomDoorOpen", true);
+      world.Print("Ok");
       return true;
     }
     return false;
   }
 
-  if (verb == 'eat') {
-    if (words[0] == 'pizza') {
+  if (verb == "eat") {
+    if (words[0] == "pizza") {
       if (murd.PIZZA.location != world.location
           && murd.PIZZA.location != world.INVENTORY) {
         world.Print("I'd love to, but I see no pizza here.");
