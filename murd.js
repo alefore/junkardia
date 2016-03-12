@@ -904,7 +904,7 @@ murd.BANK_PALM_TREE = engine.MakeObject({
   INITIAL_LOCATION: murd.BANK_RECEPTION,
   Detail: function(world) {
     return "A somewhat pretty but ultimately unremarkable palm tree, in a big "
-           + "pot.";
+           + "gray pot.";
   },
   Use: function(world, onWhat) {
     world.Print(pickRandomMessage([
