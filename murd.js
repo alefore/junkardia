@@ -181,6 +181,14 @@ murd.RESTROOM = engine.MakeRoom({
 murd.BRUPBACHERPLATZ = engine.MakeRoom({
   NAME: "brupbacherplatz",
   TITLE: "the Brupbacherplatz square",
+  ALIASES: [
+    "street",
+    "out",
+    "outside",
+    "square",
+    "platz",
+    "plaza",
+  ],
   Description: function(world) {
     return "You're in a small park. From here you can go back into your "
            + "bedroom, to the local bar, or to the Wiedikon train station.";
@@ -250,6 +258,10 @@ function ExitsTrainLines(room, exits) {
 murd.WIEDIKON = engine.MakeRoom({
   NAME: "wiedikon",
   TITLE: "the Wiedikon train station",
+  ALIASES: [
+    "station",
+    "bahnhof",
+  ],
   TrainLines: function() {
     return ["Enge", "Oerlikon", "Airport", "Hauptbahnhof"];
   },

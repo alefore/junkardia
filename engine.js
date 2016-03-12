@@ -33,13 +33,49 @@ engine.World.prototype.Init = function(game) {
   this.Print(game.INTRO);
 };
 
+engine._FindWord
+
 engine.World.prototype.LocateRoom = function(words) {
+  var exitNames = this.location.Exits(this);
+  var exits = [];
+
+  // First look for an exact name match.
   for (var i in this.game.ROOMS) {
     room = this.game.ROOMS[i];
     if (room.NAME == words[0]) {
       return room;
     }
+    if (room.NAME in exitNames) {
+      exits.push(room);
+    }
   }
+
+  // Look for aliases in exits.
+  var matches = [];
+  for (var i in exits) {
+    room = exits[i];
+    if (room.ALIASES.indexOf(words[0]) >= 0) {
+      matches.push(room);
+    }
+  }
+
+  if (matches.length == 1) {
+    return matches[0];
+  }
+
+  // Look aliases everywhere.
+  matches = [];
+  for (var i in this.game.ROOMS) {
+    room = this.game.ROOMS[i];
+    if (room.ALIASES.indexOf(words[0]) >= 0) {
+      matches.push(room);
+    }
+  }
+  if (matches.length == 1) {
+    return matches[0];
+  }
+
+  // TODO(bubble): Handle ambiguity.
   return null;
 };
 
@@ -346,6 +382,7 @@ engine.Container.prototype.GetReachableObjects = function() {
 engine.Entity = function() {};
 engine.Entity.prototype.NAME = null;
 engine.Entity.prototype.TITLE = null;
+engine.Entity.prototype.ALIASES = [];
 engine.Entity.prototype.Init = function(world) {};
 engine.Entity.prototype.Description = function(world) {
   return '';
