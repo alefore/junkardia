@@ -898,6 +898,28 @@ murd.TESSINERPLATZ_FOUNTAIN = engine.MakeObject({
   },
 });
 
+murd.BANK_PALM_TREE = engine.MakeObject({
+  NAME: "palm",
+  TITLE: "a palm tree",
+  INITIAL_LOCATION: murd.BANK_RECEPTION,
+  Detail: function(world) {
+    return "A somewhat pretty but ultimately unremarkable palm tree, in a big "
+           + "pot.";
+  },
+  Use: function(world, onWhat) {
+    world.Print(pickRandomMessage([
+        "You have no use for the palm tree.",
+        "Uh, what for?"]));
+  },
+  CanGet: function(world) {
+    world.Print("You approach the palm tree. "
+                + "The receptionist gives you a strange look. "
+                + "You decide to leave it alone; it's too heavy anyway.");
+    return false;
+  },
+});
+
+
 function MakeLiftButton(data) {
   return engine.MakeObject({
     NAME: data.floor.toString(),
@@ -1276,6 +1298,8 @@ murd.Game.prototype.OBJECTS = [
   murd.TOOTH_BRUSH,
 
   murd.TESSINERPLATZ_FOUNTAIN,
+
+  murd.BANK_PALM_TREE,
 
   murd.BANK_LIFT_BUTTON_0,
   murd.BANK_LIFT_BUTTON_1,
