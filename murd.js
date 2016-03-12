@@ -8,6 +8,8 @@ murd.flags.foodEaten = "foodEaten";
 // Did we already warn him that he should have his wallet (train pass) whenever
 // he rides a train?
 murd.warnedTrainPass = "warnedTrainPass";
+// Has drank? Set when he drinks water, cleared when he uses the toilet.
+murd.flags.hasDrank = "hasDrank";
 
 // Given an array of messages, selects an returns one randomly.
 function pickRandomMessage(options) {
@@ -865,7 +867,14 @@ murd.TESSINERPLATZ_FOUNTAIN = engine.MakeObject({
   TITLE: "a fountain",
   INITIAL_LOCATION: murd.TESSINERPLATZ,
   Use: function(world, onWhat) {
-    world.Print("You have no use for the fountain.");
+    world.Print(pickRandomMessage(
+        world.GetFlag(murd.flags.hasDrank)
+        ? ["You are not currently thirsty.",
+           "Hmm, nah you're not thirsty."]
+        : ["Ahh, delicious water, fresh from the Alps. You quench your thirst.",
+           "You carefully drink a bit of water. Two drops land in your shirt.",
+           "You lean down and drink some water from the fountain.",]));
+    world.SetFlag(murd.flags.hasDrank, true);
   },
   CanGet: function(world) {
     world.Print("Eh? That makes no sense.");
