@@ -567,7 +567,7 @@ murd.NIGHTSTAND = engine.MakeObject({
     return "It's made of beautiful wood and it was pretty affordable."
   },
   CanGet: function(world) {
-    return "Nah, it's a bit heavy and you have no use for it.";
+    world.Print("Nah, it's a bit heavy and you have no use for it.");
     return false;
   },
 });
