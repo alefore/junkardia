@@ -28,7 +28,9 @@ murd.BEDROOM = engine.MakeRoom({
   },
 
   Description: function(world) {
-    var description = "Your bedroom is a bit messy.";
+    var description =
+        "Your bedroom is a bit messy. There's an unmade bed and a nightstand "
+        + "besides it.";
     if (this.alarmClockOn) {
       description += " The annoying alarm clock is beeping loudly."
     }
@@ -42,6 +44,9 @@ murd.BEDROOM = engine.MakeRoom({
     var out = []
     for (var i in objects) {
       var obj = objects[i];
+      if (obj == murd.BED || obj == murd.NIGHTSTAND) {
+        continue;  // Already explicitly mentioned.
+      }
       if (obj == murd.WALLET) {
         if (!this.alarmClockOn) {
           world.Print("Your wallet lies on your nightstand.");
@@ -89,7 +94,7 @@ murd.BEDROOM = engine.MakeRoom({
         return true;
       }
       this.alarmClockOn = false;
-      murd.BEDROOM.container.Add(murd.WALLET);
+      murd.NIGHTSTAND.container.Add(murd.WALLET);
       world.Print("Ahh, finally a bit of peace. The room looks different "
                   + "without all this noise.");
       return true;
@@ -653,13 +658,27 @@ murd.PIZZERIA = engine.MakeRoom({
 
 murd.NIGHTSTAND = engine.MakeObject({
   NAME: "nightstand",
-  TITLE: "a bedsite table",
+  TITLE: "a nightstand",
   INITIAL_LOCATION: murd.BEDROOM,
   Detail: function(world) {
-    return "It's made of beautiful wood and it was pretty affordable."
+    return "It's a nice bedside table, made of beautiful wood. "
+           + "It was pretty affordable."
   },
   CanGet: function(world) {
     world.Print("Nah, it's a bit heavy and you have no use for it.");
+    return false;
+  },
+});
+
+murd.BED = engine.MakeObject({
+  NAME: "bed",
+  TITLE: "a comfortable bed",
+  INITIAL_LOCATION: murd.BEDROOM,
+  Use: function(world, onWhat) {
+    world.Print("It's not time to sleep! You have to go to work.");
+  },
+  CanGet: function(world) {
+    world.Print("Why would you want to do that?");
     return false;
   },
 });
@@ -1199,6 +1218,7 @@ murd.Game.prototype.ROOMS = [
 ];
 murd.Game.prototype.OBJECTS = [
   murd.NIGHTSTAND,
+  murd.BED,
   murd.WALLET,
   murd.BEDROOM_PLANT,
   murd.LINT,
