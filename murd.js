@@ -411,6 +411,14 @@ murd.TESSINERPLATZ = engine.MakeRoom({
   }
 });
 
+function HandleUseLiftAction(world, verb, words) {
+  if (verb == "use" && words.length == 1 && words[0] == "lift") {
+    world.Enter(murd.BANK_LIFT);
+    return true;
+  }
+  return false;
+}
+
 murd.BANK_RECEPTION = engine.MakeRoom({
   NAME: "reception",
   TITLE: "the reception of the bank where you work",
@@ -419,6 +427,7 @@ murd.BANK_RECEPTION = engine.MakeRoom({
            + "here you can reach the lift or you can walk out to "
            + "Tessinerplatz.";
   },
+  HandleAction: HandleUseLiftAction,
   CanEnter: function(world) {
     if (world.location == murd.BANK_LIFT) {
       world.Print("You exit the lift and walk into the reception.");
@@ -461,14 +470,16 @@ murd.BANK_LIFT = engine.MakeRoom({
     if (verb == "use" && words.length == 2 && words[0] == "button") {
       if (words[1] == "0") {
         murd.BANK_LIFT_BUTTON_0.Use(world, null);
+        return true;
       } else if (words[1] == "1") {
         murd.BANK_LIFT_BUTTON_1.Use(world, null);
+        return true;
       } else if (words[1] == "2") {
         murd.BANK_LIFT_BUTTON_2.Use(world, null);
+        return true;
       }
-      return true;
     }
-    return false;
+    return HandleUseLiftAction(world, verb, words);
   },
   CanEnter: function(world) {
     // Technically, the lift is already at the current floor, but pretending it
@@ -512,6 +523,8 @@ murd.OFFICE = engine.MakeRoom({
     this.sitting = false;
     this.timeWorking = 0;
   },
+
+  HandleAction: HandleUseLiftAction,
 
   Description: function(world) {
     var description = "In your cubicle there's a desk, a photo, ";
