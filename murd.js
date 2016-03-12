@@ -937,11 +937,15 @@ function MakeLiftButton(data) {
     INITIAL_LOCATION: murd.BANK_LIFT,
     Use: function(world, onWhat) {
       if (data.floor == 1) {
-        world.Print("Nothing happens. It looks like that button is broken.");
+        world.Print(pickRandomMessage([
+            "Nothing happens.",
+            "It looks like that button is broken."]));
         return;
       }
       if (data.floor == murd.BANK_LIFT.floor) {
-        world.Print("Nothing happens. Oh, you're already in that floor.");
+        world.Print(pickRandomMessage([
+            "Nothing happens.",
+            "Oh, you're already in that floor."]));
         return;
       }
       world.Print(
