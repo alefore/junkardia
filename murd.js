@@ -459,6 +459,19 @@ murd.BankFloorsDescriptions = [
     "the hall leading to your office"
 ];
 
+function dispatchBankLiftButton(world, button) {
+  var buttons = {
+    0: murd.BANK_LIFT_BUTTON_0,
+    1: murd.BANK_LIFT_BUTTON_1,
+    2: murd.BANK_LIFT_BUTTON_2,
+  }
+  if (button in buttons) {
+    buttons[button].Use(world, null);
+    return true;
+  }
+  return false;
+}
+
 murd.BANK_LIFT = engine.MakeRoom({
   NAME: "lift",
   TITLE: "the lift in the bank where you work",
@@ -472,17 +485,14 @@ murd.BANK_LIFT = engine.MakeRoom({
            + ". There are three buttons here: 0, 1, 2.";
   },
   HandleAction: function(world, verb, words) {
-    if (verb == "use" && words.length == 2 && words[0] == "button") {
-      if (words[1] == "0") {
-        murd.BANK_LIFT_BUTTON_0.Use(world, null);
-        return true;
-      } else if (words[1] == "1") {
-        murd.BANK_LIFT_BUTTON_1.Use(world, null);
-        return true;
-      } else if (words[1] == "2") {
-        murd.BANK_LIFT_BUTTON_2.Use(world, null);
-        return true;
-      }
+    if ((verb == "use" || verb == "press")
+        && words.length == 2 && words[0] == "button"
+        && dispatchBankLiftButton(world, words[1])) {
+      return true;
+    }
+    if (verb == "press" && words.length == 1
+        && dispatchBankLiftButton(world, words[0])) {
+      return true;
     }
     return HandleUseLiftAction(world, verb, words);
   },
