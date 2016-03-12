@@ -388,8 +388,8 @@ murd.TESSINERPLATZ = engine.MakeRoom({
   TITLE: "Tessinerplatz",
   Description: function(world) {
     return "You're in Tessinerplatz, a beautiful square in front of the Enge "
-           + "train station. From here you can walk to your office or to the "
-           + "pizzeria.";
+           + "train station. From here you can walk to the office reception of "
+           + "the bank where you work or to the pizzeria.";
   },
   CanEnter: function(world) {
     if (world.location == murd.OFFICE) {
@@ -402,8 +402,89 @@ murd.TESSINERPLATZ = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"enge": true, "office": true, "pizzeria": true};
+    return {"enge": true, "reception": true, "pizzeria": true};
   }
+});
+
+murd.BANK_RECEPTION = engine.MakeRoom({
+  NAME: "reception",
+  TITLE: "the reception of the bank where you work",
+  Description: function(world) {
+    return "You're in the office reception of the bank where you work. From "
+           + "here you can reach the lift or you can walk out to "
+           + "Tessinerplatz.";
+  },
+  CanEnter: function(world) {
+    if (world.location == murd.BANK_LIFT) {
+      world.Print("You exit the lift and walk into the reception.");
+    } else if (world.location == murd.TESSINERPLATZ) {
+      var description = "The automatic doors slide open and let you in.";
+      var r = Math.random();
+      if (r < 0.3) {
+        description += " The receptionist smiles as you walk through.";
+      } else if (r < 0.6) {
+        description += " The receptionist talks loudly on the phone.";
+      }
+      world.Print(description);
+    }
+    return true;
+  },
+  Exits: function(world) {
+    return {"lift": true, "tessinerplatz": true};
+  }
+});
+
+murd.BankFloorsDescriptions = [
+    "the reception, leading outside",
+    "a small cafe",
+    "the hall leading to your office"
+];
+
+murd.BANK_LIFT = engine.MakeRoom({
+  NAME: "lift",
+  TITLE: "the lift in the bank where you work",
+  Init: function() {
+    this.floor = 0;
+  },
+  Description: function(world) {
+    return "You're surrounded by the three walls of steel in the lift. "
+           + "The open doors are facing "
+           + murd.BankFloorsDescriptions[this.floor]
+           + ". There are three buttons here: 0, 1, 2.";
+  },
+  CanEnter: function(world) {
+    // Technically, the lift is already at the current floor, but pretending it
+    // is arriving makes things slightly more colorful.
+    world.Print("You press the button to call the lift. " + pickRandomMessage([
+        "It arrives instantaneously.",
+        "It takes a while but the lift finally arrives.",
+        "You enter and the doors close behind you."]));
+    return true;
+  },
+  Exits: function(world) {
+    var output = {};
+    if (this.floor == 0) {
+      output["reception"] = true;
+    } else if (this.floor == 1) {
+      // TODO.
+    } else if (this.floor == 2) {
+      output["office"] = true;
+    }
+    return output;
+  },
+  DescribeObjects: function(world, objects) {
+    var out = []
+    for (var i in objects) {
+      var obj = objects[i];
+      if (obj == murd.BANK_LIFT_BUTTON_0
+          || obj == murd.BANK_LIFT_BUTTON_1
+          || obj == murd.BANK_LIFT_BUTTON_2) {
+        continue;  // They're already in the description.
+      }
+      out.push(obj)
+    }
+    return out;
+  },
 });
 
 murd.OFFICE = engine.MakeRoom({
@@ -428,7 +509,7 @@ murd.OFFICE = engine.MakeRoom({
          && murd.PIZZA.location != murd.OFFICE)
         || this.timeWorking == 3) {
       // As a hint.
-      description += " From here you can easily reach Tessinerplatz.";
+      description += " From here you can take the lift to go outside.";
     }
     return description;
   },
@@ -445,13 +526,11 @@ murd.OFFICE = engine.MakeRoom({
     return out;
   },
   CanEnter: function(world) {
+    var description = "You exit the lift and walk to your cubicle.";
     if (murd.OFFICE.timeWorking == 0) {
-      world.Print(
-          "You go through the door, take the lift an enter your cubicle. Looks "
-          + "like nobody noticed how late you are.");
-    } else if (murd.OFFICE.timeWorking == 1) {
-      world.Print("You take the lift and get back to your cubicle.");
+      description += " Looks like nobody noticed how late you are.";
     }
+    world.Print(description);
     return true;
   },
   CanLeave: function(world, toRoom) {
@@ -487,7 +566,7 @@ murd.OFFICE = engine.MakeRoom({
     }
   },
   Exits: function(world) {
-    return {"tessinerplatz": true};
+    return {"lift": true};
   }
 });
 
@@ -747,6 +826,39 @@ murd.TESSINERPLATZ_FOUNTAIN = engine.MakeObject({
     return false;
   },
 });
+
+function MakeLiftButton(data) {
+  return engine.MakeObject({
+    NAME: data.floor.toString(),
+    TITLE: "button " + data.floor,
+    INITIAL_LOCATION: murd.BANK_LIFT,
+    Use: function(world, onWhat) {
+      if (data.floor == 1) {
+        world.Print("Nothing happens. It looks like that button is broken.");
+        return;
+      }
+      if (data.floor == murd.BANK_LIFT.floor) {
+        world.Print("Nothing happens. Oh, you're already in that floor.");
+        return;
+      }
+      world.Print(
+          "The doors close and the lift travels "
+          + (data.floor > murd.BANK_LIFT.floor ? "upwards" : "downwards")
+          + ". The doors open again, facing "
+          + murd.BankFloorsDescriptions[data.floor]
+          + ".");
+      murd.BANK_LIFT.floor = data.floor;
+    },
+    CanGet: function(world) {
+      world.Print("It's attached to the panel.");
+      return false;
+    }
+  });
+}
+
+murd.BANK_LIFT_BUTTON_0 = MakeLiftButton({ floor: 0 });
+murd.BANK_LIFT_BUTTON_1 = MakeLiftButton({ floor: 1 });
+murd.BANK_LIFT_BUTTON_2 = MakeLiftButton({ floor: 2 });
 
 murd.COMPUTER = engine.MakeObject({
   NAME: "computer",
@@ -1066,6 +1178,8 @@ murd.Game.prototype.ROOMS = [
   murd.OERLIKON,
   murd.TESSINERPLATZ,
   murd.PIZZERIA,
+  murd.BANK_RECEPTION,
+  murd.BANK_LIFT,
   murd.OFFICE,
   murd.JAIL,
 ];
@@ -1081,6 +1195,10 @@ murd.Game.prototype.OBJECTS = [
   murd.TOOTH_BRUSH,
 
   murd.TESSINERPLATZ_FOUNTAIN,
+
+  murd.BANK_LIFT_BUTTON_0,
+  murd.BANK_LIFT_BUTTON_1,
+  murd.BANK_LIFT_BUTTON_2,
 
   murd.COMPUTER,
   murd.OFFICE_CHAIR,
