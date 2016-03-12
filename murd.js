@@ -557,6 +557,21 @@ murd.PIZZERIA = engine.MakeRoom({
   },
 });
 
+// ** Objects ******************************************************************
+
+murd.NIGHTSTAND = engine.MakeObject({
+  NAME: "nightstand",
+  TITLE: "a bedsite table",
+  INITIAL_LOCATION: murd.BEDROOM,
+  Detail: function(world) {
+    return "It's made of beautiful wood and it was pretty affordable."
+  },
+  CanGet: function(world) {
+    return "Nah, it's a bit heavy and you have no use for it.";
+    return false;
+  },
+});
+
 murd.WALLET = engine.MakeObject({
   NAME: "wallet",
   TITLE: "your wallet",
@@ -1055,6 +1070,7 @@ murd.Game.prototype.ROOMS = [
   murd.JAIL,
 ];
 murd.Game.prototype.OBJECTS = [
+  murd.NIGHTSTAND,
   murd.WALLET,
   murd.BEDROOM_PLANT,
   murd.LINT,
