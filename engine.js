@@ -21,13 +21,14 @@ engine.World.prototype.Init = function(game) {
   
   for (var i in game.OBJECTS) {
     var obj = game.OBJECTS[i];
-    obj.location = obj.INITIAL_LOCATION;
-    if (obj.location === engine.INVENTORY) {
-      obj.location = this.INVENTORY;
-    } else if (obj.location === null) {
-      obj.location = this.LIMBO;
+    var loc = obj.INITIAL_LOCATION;
+    if (loc === engine.INVENTORY) {
+      loc = this.INVENTORY;
+    } else if (loc === null) {
+      loc = this.LIMBO;
     }
-    obj.location.container.Add(obj);
+    obj.location = null;
+    loc.container.Add(obj);
   }
 
   this.Print(game.INTRO);
@@ -353,8 +354,10 @@ engine.Container = function(parent) {
   this.objects = [];
 };
 engine.Container.prototype.Add = function(obj) {
-  var old = obj.location.container;
-  old.objects.splice(old.objects.indexOf(obj), 1);  
+  if (obj.location !== null) {
+    var old = obj.location.container;
+    old.objects.splice(old.objects.indexOf(obj), 1);  
+  }
   this.objects.push(obj);
   obj.location = this.parent;
 };
