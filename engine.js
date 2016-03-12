@@ -16,13 +16,16 @@ engine.World.prototype.Init = function(game) {
   this.flags = {};
   this.location = game.START_LOCATION;
   this.INVENTORY = new engine.Container(null);
+  this.LIMBO = new engine.Container(null);
   this.game.InitState(this);
   
   for (var i in game.OBJECTS) {
     var obj = game.OBJECTS[i];
     obj.location = obj.INITIAL_LOCATION;
-    if (obj.location == null) {
+    if (obj.location === engine.INVENTORY) {
       obj.location = this.INVENTORY;
+    } else if (obj.location === null) {
+      obj.location = this.LIMBO;
     }
     obj.location.container.Add(obj);
   }
@@ -73,9 +76,7 @@ engine.World.prototype.Destroy = function(obj) {
         'but it is not in the inventory.')
     return;
   }
-  var inv = this.INVENTORY.objects;
-  inv.splice(inv.indexOf(obj), 1);
-  obj.location = null;
+  this.LIMBO.Add(obj);
 };
 
 engine.World.prototype.DescribeRoom = function() {
@@ -230,6 +231,7 @@ engine.World.prototype.HandleAction = function(verb, words) {
   return true;
 }
 
+engine.INVENTORY = 'INVENTORY';
 
 engine.Engine.prototype.Start = function(game) {
   this.screen_.innerHTML = '';

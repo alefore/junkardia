@@ -89,6 +89,7 @@ murd.BEDROOM = engine.MakeRoom({
         return true;
       }
       this.alarmClockOn = false;
+      murd.BEDROOM.container.Add(murd.WALLET);
       world.Print("Ahh, finally a bit of peace. The room looks different "
                   + "without all this noise.");
       return true;
@@ -547,7 +548,7 @@ murd.PIZZERIA = engine.MakeRoom({
 murd.WALLET = engine.MakeObject({
   NAME: "wallet",
   TITLE: "your wallet",
-  INITIAL_LOCATION: murd.BEDROOM,
+  INITIAL_LOCATION: null,
   Detail: function(world) {
     if (this.location == world.INVENTORY) {
       return "You have $23, a trains pass, and a credit card.";
@@ -567,7 +568,7 @@ murd.WALLET = engine.MakeObject({
 murd.LINT = engine.MakeObject({
   NAME: "lint",
   TITLE: "some pocket lint",
-  INITIAL_LOCATION: null,
+  INITIAL_LOCATION: engine.INVENTORY,
   Detail: function(world) {
     return "Maybe you should consider buying new pants."
   },
