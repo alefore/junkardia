@@ -678,10 +678,16 @@ murd.RESTROOM_WINDOW = engine.MakeObject({
   },
 });
 
+murd.SINK = engine.MakeObject({
+  NAME: "sink",
+  TITLE: "the sink",
+  INITIAL_LOCATION: murd.RESTROOM,
+});
+
 murd.TOOTH_BRUSH = engine.MakeObject({
   NAME: "toothbrush",
   TITLE: "a red toothbrush",
-  INITIAL_LOCATION: murd.RESTROOM,
+  INITIAL_LOCATION: murd.SINK,
   Detail: function(world) {
     return "A red toothbrush. It's a bit old.";
   },
@@ -695,10 +701,9 @@ murd.TOOTH_BRUSH = engine.MakeObject({
                 + "refreshing mint scent in your mouth.");
   },
   dropIfHeld: function(world) {
-    if (murd.TOOTH_BRUSH.location != world.INVENTORY) { return; }
+    if (this.location != world.INVENTORY) { return; }
     world.Print("You set the toothbrush by the sink.");
-    // TODO: Inhibit the "Ok" message below.
-    world.Drop(murd.TOOTH_BRUSH);
+    murd.SINK.container.Add(this)
   }
 });
 
@@ -1043,6 +1048,7 @@ murd.Game.prototype.OBJECTS = [
 
   murd.SHOWER,
   murd.RESTROOM_WINDOW,
+  murd.SINK,
   murd.TOOTH_BRUSH,
 
   murd.TESSINERPLATZ_FOUNTAIN,
