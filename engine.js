@@ -21,13 +21,14 @@ engine.World.prototype.Init = function(game) {
   
   for (var i in game.OBJECTS) {
     var obj = game.OBJECTS[i];
-    obj.location = obj.INITIAL_LOCATION;
-    if (obj.location === engine.INVENTORY) {
-      obj.location = this.INVENTORY;
-    } else if (obj.location === null) {
-      obj.location = this.LIMBO;
+    var loc = obj.INITIAL_LOCATION;
+    if (loc === engine.INVENTORY) {
+      loc = this.INVENTORY;
+    } else if (loc === null) {
+      loc = this.LIMBO;
     }
-    obj.location.container.Add(obj);
+    obj.location = null;
+    loc.container.Add(obj);
   }
 
   this.Print(game.INTRO);
@@ -80,12 +81,52 @@ engine.World.prototype.LocateRoom = function(words) {
 };
 
 engine.World.prototype.LocateObject = function(words) {
+  // Look for exact name matches.
   for (var i in this.game.OBJECTS) {
-    obj = this.game.OBJECTS[i];
+    var obj = this.game.OBJECTS[i];
     if (obj.NAME == words[0]) {
       return obj;
     }
   }
+
+  // Look for aliases in the inventory.
+  var matches = [];
+  var inv = this.INVENTORY.GetReachableObjects();
+  for (var i in inv) {
+    var obj = inv[i];
+    if (obj.ALIASES.indexOf(words[0]) >= 0) {
+      matches.push(obj);
+    }
+  }
+  if (matches.length == 1) {
+    return matches[0];
+  }
+
+  // Look for aliases in the current room.
+  matches = [];
+  var loc = this.location.container.GetReachableObjects();
+  for (var i in loc) {
+    var obj = loc[i];
+    if (obj.ALIASES.indexOf(words[0]) >= 0) {
+      matches.push(obj);
+    }
+  }
+  if (matches.length == 1) {
+    return matches[0];
+  }
+
+  // Look for aliases everywhere.
+  for (var i in this.game.OBJECTS) {
+    var obj = this.game.OBJECTS[i];
+    if (obj.ALIASES.indexOf(words[0]) >= 0) {
+      matches.push(obj);
+    }
+  }
+  if (matches.length == 1) {
+    return matches[0];
+  }
+
+  // TODO(bubble): Handle ambiguity.
   return null;
 };
 
@@ -353,8 +394,10 @@ engine.Container = function(parent) {
   this.objects = [];
 };
 engine.Container.prototype.Add = function(obj) {
-  var old = obj.location.container;
-  old.objects.splice(old.objects.indexOf(obj), 1);  
+  if (obj.location !== null) {
+    var old = obj.location.container;
+    old.objects.splice(old.objects.indexOf(obj), 1);  
+  }
   this.objects.push(obj);
   obj.location = this.parent;
 };
