@@ -622,6 +622,7 @@ murd.LINT = engine.MakeObject({
 murd.BEDROOM_PLANT = engine.MakeObject({
   NAME: "orchid",
   TITLE: "an orchid growing on a yellow pot",
+  ALIASES: ["flower", "plant"],
   INITIAL_LOCATION: murd.BEDROOM,
   Detail: function(world) {
     return pickRandomMessage([

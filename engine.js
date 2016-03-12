@@ -81,12 +81,52 @@ engine.World.prototype.LocateRoom = function(words) {
 };
 
 engine.World.prototype.LocateObject = function(words) {
+  // Look for exact name matches.
   for (var i in this.game.OBJECTS) {
-    obj = this.game.OBJECTS[i];
+    var obj = this.game.OBJECTS[i];
     if (obj.NAME == words[0]) {
       return obj;
     }
   }
+
+  // Look for aliases in the inventory.
+  var matches = [];
+  var inv = this.INVENTORY.GetReachableObjects();
+  for (var i in inv) {
+    var obj = inv[i];
+    if (obj.ALIASES.indexOf(words[0]) >= 0) {
+      matches.push(obj);
+    }
+  }
+  if (matches.length == 1) {
+    return matches[0];
+  }
+
+  // Look for aliases in the current room.
+  matches = [];
+  var loc = this.location.container.GetReachableObjects();
+  for (var i in loc) {
+    var obj = loc[i];
+    if (obj.ALIASES.indexOf(words[0]) >= 0) {
+      matches.push(obj);
+    }
+  }
+  if (matches.length == 1) {
+    return matches[0];
+  }
+
+  // Look for aliases everywhere.
+  for (var i in this.game.OBJECTS) {
+    var obj = this.game.OBJECTS[i];
+    if (obj.ALIASES.indexOf(words[0]) >= 0) {
+      matches.push(obj);
+    }
+  }
+  if (matches.length == 1) {
+    return matches[0];
+  }
+
+  // TODO(bubble): Handle ambiguity.
   return null;
 };
 
