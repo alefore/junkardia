@@ -10,6 +10,9 @@ murd.flags.foodEaten = "foodEaten";
 murd.warnedTrainPass = "warnedTrainPass";
 // Has drank? Set when he drinks water, cleared when he uses the toilet.
 murd.flags.hasDrank = "hasDrank";
+// Are his hands clean? Set to true when he showers, to false when he eats
+// his pizza, needs to wash them in the fountain.
+murd.flags.hasCleanHands = "hasCleanHands";
 
 // Given an array of messages, selects an returns one randomly.
 function pickRandomMessage(options) {
@@ -572,7 +575,8 @@ murd.OFFICE = engine.MakeRoom({
       return false;
     }
     if (this.timeWorking == 1) {
-      if (world.GetFlag(murd.flags.foodEaten) == 0) {
+      if (world.GetFlag(murd.flags.foodEaten) == 0
+          || !world.GetFlag(murd.flags.hasCleanHands)) {
         this.sitting = false;
         murd.OFFICE_PHOTO.dropIfHeld(world);
         return true;
@@ -791,6 +795,7 @@ murd.SHOWER = engine.MakeObject({
       return false;
     }
     murd.TOOTH_BRUSH.dropIfHeld(world);
+    world.SetFlag(murd.flags.hasCleanHands, true);
     world.SetFlag(murd.flags.showered, true);
     this.TITLE = "a wet shower";
     world.Print(
@@ -867,14 +872,25 @@ murd.TESSINERPLATZ_FOUNTAIN = engine.MakeObject({
   TITLE: "a fountain",
   INITIAL_LOCATION: murd.TESSINERPLATZ,
   Use: function(world, onWhat) {
-    world.Print(pickRandomMessage(
-        world.GetFlag(murd.flags.hasDrank)
-        ? ["You are not currently thirsty.",
-           "Hmm, nah you're not thirsty."]
-        : ["Ahh, delicious water, fresh from the Alps. You quench your thirst.",
-           "You carefully drink a bit of water. Two drops land in your shirt.",
-           "You lean down and drink some water from the fountain.",]));
-    world.SetFlag(murd.flags.hasDrank, true);
+    var descriptions;
+    if (!world.GetFlag(murd.flags.hasDrank)) {
+      descriptions = [
+          "Ahh, delicious water, fresh from the Alps. You quench your thirst.",
+          "You carefully drink a bit of water. Two drops land in your shirt.",
+          "You lean down and drink some water from the fountain."];
+      world.SetFlag(murd.flags.hasDrank, true);
+    } else if (!world.GetFlag(murd.flags.hasCleanHands)) {
+      descriptions = [
+          "You wash your hands in the water.",
+          "You rinse the grease away. The water feels cold in your hands."];
+      world.SetFlag(murd.flags.hasCleanHands, true);
+    } else {
+      descriptions = [
+          "You are not currently thirsty.",
+          "The water looks refreshing, but you're not thirsty.",
+          "You have no use for it right now."];
+    }
+    world.Print(pickRandomMessage(descriptions));
   },
   CanGet: function(world) {
     world.Print("Eh? That makes no sense.");
@@ -924,6 +940,13 @@ murd.COMPUTER = engine.MakeObject({
            + "here all day.";
   },
   Use: function(world, onWhat) {
+    if (!world.GetFlag(murd.flags.hasCleanHands)) {
+      world.Print(pickRandomMessage([
+          "Your hands are currently a bit greasy; you should wash them before "
+          + "you use the computer.",
+          "Not with these filthy hands! You'd make the keyboard greasy."]));
+      return;
+    }
     if (murd.OFFICE.timeWorking == 0) {
       murd.OFFICE.timeWorking++;
       var description;
@@ -1073,11 +1096,13 @@ murd.PIZZA = engine.MakeObject({
       }
     }
 
+    world.SetFlag(murd.flags.hasCleanHands, false);
     world.SetFlag(murd.flags.foodEaten,
                   world.GetFlag(murd.flags.FoodEaten) + 1);
     world.Destroy(this);
     world.Print("You eat the slice of pizza. It's not the best you've eaten, "
-                + "but it certainly calms your appetite.");
+                + "but it certainly calms your appetite. Ugh, your hands are "
+                + "now very greasy.");
   },
   CanGet: function(world) {
     if (murd.PIZZERIA.pizzaPaid) {
