@@ -25,6 +25,9 @@ function isShowerCommand(verb, words) {
 }
 
 function linkToRoom(room) {
+  if (!room.visited) {
+    return room.TITLE;
+  }
   return "<a href='javascript:eng.ProcessAction(&quot;go " + room.NAME
          + "&quot;);'>" + room.TITLE + "</a>";
 }

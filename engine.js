@@ -15,6 +15,7 @@ engine.World.prototype.Init = function(game) {
   this.gameOver = false;
   this.flags = {};
   this.location = game.START_LOCATION;
+  this.location.visited = true;
   this.INVENTORY = new engine.Container(null);
   this.LIMBO = new engine.Container(null);
   this.game.InitState(this);
@@ -187,6 +188,7 @@ engine.World.prototype.Enter = function(room) {
   }
 
   this.location = room;
+  this.location.visited = true;
   this.DescribeRoom();
 };
 
@@ -445,6 +447,7 @@ engine.MakeEntity = function(superclass, data) {
 
 engine.Room = function() {};
 engine.Room.prototype = new engine.Entity();
+engine.Room.prototype.visited = false;
 engine.Room.prototype.CanLeave = function(world, toRoom) {
   return true;
 };
