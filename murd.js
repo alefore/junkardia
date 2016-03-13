@@ -136,7 +136,8 @@ murd.RESTROOM = engine.MakeRoom({
       }
       this.descriptionCount++;
     } else {
-      description += " The restroom smells a bit.";
+      description += " The restroom smells a bit. There's a window facing the "
+                     + "beautiful mountain of Uetliberg.";
     }
     return description;
   },
@@ -145,7 +146,7 @@ murd.RESTROOM = engine.MakeRoom({
     var out = []
     for (var i in objects) {
       var obj = objects[i];
-      if (obj == murd.RESTROOM_WINDOW && this.windowOpen) {
+      if (obj == murd.RESTROOM_WINDOW) {
         continue;  // Already mentioned in the description.
       }
       out.push(obj)
