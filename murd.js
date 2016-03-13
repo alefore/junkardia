@@ -595,12 +595,12 @@ function CanLeaveOfficeFloor(world, toRoom) {
                 + "spreadsheets.");
     return false;
   }
-  if (this.timeWorking == 2) {
+  if (timeWorking == 2) {
     world.Print("You should probably work a bit more, or you're never going "
                 + "to finish this annoying report.");
     return false;
   }
-  if (this.timeWorking == 3) {
+  if (timeWorking == 3) {
     world.Print(
         "You try to take " + linkToRoom(murd.BANK_LIFT)
         + " down but it appears to be out of service. "
@@ -1021,7 +1021,8 @@ murd.TESSINERPLATZ_FOUNTAIN = engine.MakeObject({
       descriptions = [
           "Ahh, delicious water, fresh from the Alps. You quench your thirst.",
           "You carefully drink a bit of water. Two drops land in your shirt.",
-          "You lean down and drink some water from the fountain."];
+          "You lean down and drink some water from the fountain. You're no "
+          + "longer thirsty."];
       world.SetFlag(murd.flags.hasDrank, true);
     } else if (!world.GetFlag(murd.flags.hasCleanHands)) {
       descriptions = [
@@ -1281,6 +1282,51 @@ murd.OFFICE_PHOTO = engine.MakeObject({
   }
 });
 
+// TODO: Rename to "sink" once it no longer clashes with the other sink.
+murd.BANK_SINK = engine.MakeObject({
+  NAME: "washbasin",
+  TITLE: "a washbasin",
+  INITIAL_LOCATION: murd.BANK_TOILET,
+  Detail: function(world) {
+    return "A nice basin where you can wash your hands.";
+  },
+  Use: function(world, onWhat) {
+    world.Print(
+        pickRandomMessage([
+            "You open the sink and run a bit of water through your hands. ",
+            "You open the sink and get your hands wet. "])
+        + pickRandomMessage([
+              "You add a bit of soap and then rinse it off. ",
+              "You rub a bit of soap on your hands and rinse it off. "])
+        + pickRandomMessage([
+              "The water is refreshing.",
+              "The water feels refreshing.",
+              "The water is a bit cold.",
+              "The water burns you briefly."]));
+    world.SetFlag(murd.flags.hasCleanHands, true);
+  },
+  CanGet: function(world) {
+    world.Print(pickRandomMessage([
+        "It's fixed to the wall.",
+        "Nope. What would you do with it?",
+        "It's attached to the wall."]));
+    return false;
+  },
+});
+
+murd.BANK_SOAP = engine.MakeObject({
+  NAME: "soap",
+  TITLE: "soap",
+  INITIAL_LOCATION: murd.BANK_SINK,
+  Use: function(world, onWhat) {
+    murd.BANK_SINK.Use(world, onWhat);
+  },
+  CanGet: function(world) {
+    murd.BANK_SINK.Use(world, null);
+    return false;
+  },
+});
+
 murd.PIZZA = engine.MakeObject({
   NAME: "pizza",
   TITLE: "a slice of pizza",
@@ -1490,6 +1536,9 @@ murd.Game.prototype.OBJECTS = [
   murd.OFFICE_CHAIR,
   murd.OFFICE_DESK,
   murd.OFFICE_PHOTO,
+
+  murd.BANK_SINK,
+  murd.BANK_SOAP,
 
   murd.PIZZA,
 
