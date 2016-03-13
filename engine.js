@@ -369,7 +369,7 @@ engine.Engine.prototype.Action = function() {
 
 engine.Engine.prototype.ProcessAction = function(action) {
   this.Print('');
-  this.Print('> ' + action);
+  this.Print("<span class='command'>> " + action + "</span>");
   var words = action.toLowerCase().split(/\s+/);
   var verb = words.shift();
   var handled = this.game.HandleAction(this.world, verb, words);
