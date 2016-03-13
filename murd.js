@@ -498,7 +498,8 @@ murd.BankFloorsDescriptions = [
       return "a small cafe";
     },
     function (world) {
-      return "the hall leading to " + linkToRoom(murd.OFFICE);
+      return "the hall leading to " + linkToRoom(murd.OFFICE) + " and to "
+             + linkToRoom(murd.BANK_TOILET);
     },
 ];
 
@@ -556,6 +557,7 @@ murd.BANK_LIFT = engine.MakeRoom({
       // TODO.
     } else if (this.floor == 2) {
       output["office"] = true;
+      output["toilet"] = true;
     }
     return output;
   },
@@ -573,6 +575,44 @@ murd.BANK_LIFT = engine.MakeRoom({
     return out;
   },
 });
+
+function CanLeaveOfficeFloor(world, toRoom) {
+  if (toRoom == murd.OFFICE || toRoom == murd.BANK_TOILET) {
+    return true;
+  }
+
+  var timeWorking = murd.OFFICE.timeWorking;
+  if (timeWorking == 0) {
+    world.Print("No, you need to focus on your work!");
+    return false;
+  }
+  if (timeWorking == 1) {
+    if (world.GetFlag(murd.flags.foodEaten) == 0
+        || !world.GetFlag(murd.flags.hasCleanHands)) {
+      return true;
+    }
+    world.Print("Your lunch break is over, time to get back to your "
+                + "spreadsheets.");
+    return false;
+  }
+  if (this.timeWorking == 2) {
+    world.Print("You should probably work a bit more, or you're never going "
+                + "to finish this annoying report.");
+    return false;
+  }
+  if (this.timeWorking == 3) {
+    world.Print(
+        "You try to take " + linkToRoom(murd.BANK_LIFT)
+        + " down but it appears to be out of service. "
+        + "Ugh, you'll have to take the stairs.<br>"
+        + "As you're walking down, you stumble and nearly fall as you find "
+        + "the <b>murder scene</b>! The body of your colleague Micha is "
+        + "laying on the ground, between floors 3 and 4!<br>"
+        + "Welcome to Micha's Murder Mistery!<br>"
+        + "<h1>You've won.</h1>");
+  }
+  return true;
+}
 
 murd.OFFICE = engine.MakeRoom({
   NAME: "office",
@@ -592,6 +632,7 @@ murd.OFFICE = engine.MakeRoom({
     if (this.timeWorking == 3) {
       description += " It's dark outside.";
     }
+    description += " There's " + linkToRoom(murd.BANK_TOILET) + " nearby.";
     if ((this.timeWorking == 1
          && ((world.GetFlag(murd.flags.foodEaten) == 0
               && murd.PIZZA.location != world.INVENTORY
@@ -617,51 +658,58 @@ murd.OFFICE = engine.MakeRoom({
     return out;
   },
   CanEnter: function(world) {
-    var description = "You exit " + linkToRoom(murd.BANK_LIFT)
-                      + " and walk to your cubicle.";
-    if (murd.OFFICE.timeWorking == 0) {
-      description += " Looks like nobody noticed how late you are.";
+    var description;
+    if (world.location == murd.BANK_LIFT) {
+      description = "You exit " + linkToRoom(murd.BANK_LIFT)
+                        + " and walk to your cubicle.";
+      if (murd.OFFICE.timeWorking == 0) {
+        description += " Looks like nobody noticed how late you are.";
+      }
+    } else {
+      description = "You walk across the hall"
+                    + (murd.OFFICE.visited ? " back" : "")
+                    + " to the office.";
     }
     world.Print(description);
     return true;
   },
   CanLeave: function(world, toRoom) {
-    if (this.timeWorking == 0) {
-      world.Print("No, you need to focus on your work!");
+    if (!CanLeaveOfficeFloor(world, toRoom)) {
       return false;
     }
-    if (this.timeWorking == 1) {
-      if (world.GetFlag(murd.flags.foodEaten) == 0
-          || !world.GetFlag(murd.flags.hasCleanHands)) {
-        this.sitting = false;
-        murd.OFFICE_PHOTO.dropIfHeld(world);
-        return true;
-      }
-      world.Print("Your lunch break is over, time to get back to your "
-                  + "spreadsheets.");
-      return false;
-    }
-    if (this.timeWorking == 2) {
-      world.Print("You should probably work a bit more, or you're never going "
-                  + "to finish this annoying report.");
-      return false;
-    }
-    if (this.timeWorking == 3) {
-      murd.OFFICE_PHOTO.dropIfHeld(world);
-      world.Print(
-          "You try to take " + linkToRoom(murd.BANK_LIFT)
-          + " down but it appears to be out of service. "
-          + "Ugh, you'll have to take the stairs.<br>"
-          + "As you're walking down, you stumble and nearly fall as you find "
-          + "the <b>murder scene</b>! The body of your colleague Micha is "
-          + "laying on the ground, between floors 3 and 4!<br>"
-          + "Welcome to Micha's Murder Mistery!<br>"
-          + "<h1>You've won.</h1>");
-    }
+    this.sitting = false;
+    murd.OFFICE_PHOTO.dropIfHeld(world);
+    return true;
   },
   Exits: function(world) {
-    return {"lift": true};
+    return {"lift": true, "toilet": true};
   }
+});
+
+murd.BANK_TOILET = engine.MakeRoom({
+  NAME: "toilet",
+  TITLE: "a small toilet",
+  Description: function(world) {
+    return "You're in a standard, if a bit small, office toilet. It has "
+           + "gray tiles and smells of cheap soap. Jazmin.<br>"
+           + "There's a hall outside, leading to " + linkToRoom(murd.OFFICE)
+           + " and to " + linkToRoom(murd.BANK_LIFT) + ".";
+  },
+  CanEnter: function(world) {
+    if (murd.OFFICE.timeWorking == 1
+        && world.GetFlag(murd.flags.foodEaten) == 1
+        && !world.GetFlag(murd.flags.hasCleanHands)) {
+      world.Print(pickRandomMessage([
+          "Ugh, looks like one of your colleages is locked in in there.",
+          "You try to turn the knob but the door is locked from inside."]));
+      return false;
+    }
+    return true;
+  },
+  CanLeave: CanLeaveOfficeFloor,
+  Exits: function(world) {
+    return {"lift": true, "office": true};
+  },
 });
 
 murd.JAIL = engine.MakeRoom({
@@ -1250,7 +1298,7 @@ murd.PIZZA = engine.MakeObject({
 
     world.SetFlag(murd.flags.hasCleanHands, false);
     world.SetFlag(murd.flags.foodEaten,
-                  world.GetFlag(murd.flags.FoodEaten) + 1);
+                  world.GetFlag(murd.flags.foodEaten) + 1);
     world.Destroy(this);
     world.Print("You eat the slice of pizza. It's not the best you've eaten, "
                 + "but it certainly calms your appetite. Ugh, your hands are "
@@ -1367,7 +1415,7 @@ murd.Game = function() {
 murd.Game.prototype = new engine.Game();
 murd.Game.prototype.InitState = function(world) {
   world.SetFlag("restroomDoorOpen", false);
-  world.SetFlag("foodEaten", 0);
+  world.SetFlag(murd.flags.foodEaten, 0);
 };
 
 murd.Game.prototype.HandleAction = function(world, verb, words) {
@@ -1413,6 +1461,7 @@ murd.Game.prototype.ROOMS = [
   murd.BANK_RECEPTION,
   murd.BANK_LIFT,
   murd.OFFICE,
+  murd.BANK_TOILET,
   murd.JAIL,
 ];
 murd.Game.prototype.OBJECTS = [
