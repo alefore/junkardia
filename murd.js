@@ -49,7 +49,7 @@ murd.BEDROOM = engine.MakeRoom({
       description += " The annoying alarm clock is beeping loudly."
     }
     description +=
-        " Two doors are here, one leads to the "
+        " There's two doors here, one leads to "
         + linkToRoom(murd.RESTROOM)
         + " and one down to "
         + linkToRoom(murd.BRUPBACHERPLATZ)
@@ -150,7 +150,7 @@ murd.RESTROOM = engine.MakeRoom({
       description += " The restroom smells a bit. There's a window facing the "
                      + "beautiful mountain of Uetliberg and ";
     }
-    description += "a door leading back to your " + linkToRoom(murd.BEDROOM)
+    description += "a door leading back to " + linkToRoom(murd.BEDROOM)
         + ".";
     return description;
   },
@@ -203,7 +203,7 @@ murd.RESTROOM = engine.MakeRoom({
 // TODO: Add a mailbox, with some stuff that becomes critical later in the game?
 murd.BRUPBACHERPLATZ = engine.MakeRoom({
   NAME: "brupbacherplatz",
-  TITLE: "the Brupbacherplatz square",
+  TITLE: "Brupbacherplatz",
   ALIASES: [
     "street",
     "out",
@@ -370,7 +370,8 @@ murd.ENGE = engine.MakeRoom({
       } else {
         world.Print(
             "There's no time for that! Now you really should get to your "
-            + "office, which is a few blocks from Tessinerplatz.");
+            + "office, which is a few blocks from "
+            + linkToRoom(murd.TESSINERPLATZ) + ".");
       }
     }
     if (murd.OFFICE.timeWorking == 1) {
@@ -405,7 +406,7 @@ murd.AIRPORT = engine.MakeRoom({
 
 murd.OERLIKON = engine.MakeRoom({
   NAME: "oerlikon",
-  TITLE: "the oerlikon train station",
+  TITLE: "the Oerlikon train station",
   Description: function(world) {},
 });
 
@@ -418,8 +419,8 @@ murd.TESSINERPLATZ = engine.MakeRoom({
     this.warnedUprootTree = false;
   },
   Description: function(world) {
-    return "You're in Tessinerplatz, a beautiful square in front of the Enge "
-           + "train station.<br>"
+    return "You're in Tessinerplatz, a beautiful square in front of "
+           + linkToRoom(murd.ENGE) + ".<br>"
            + "The square has a nice fountain and a few trees.<br>"
            + "From here you can walk to " + linkToRoom(murd.BANK_RECEPTION)
            + " or to " + linkToRoom(murd.PIZZERIA) + ".";
@@ -488,10 +489,17 @@ murd.BANK_RECEPTION = engine.MakeRoom({
   }
 });
 
+// One function per level, should describe what's visible.
 murd.BankFloorsDescriptions = [
-    "the reception, leading outside",
-    "a small cafe",
-    "the hall leading to your office"
+    function(world) {
+      return linkToRoom(murd.BANK_RECEPTION) + ", leading outside";
+    },
+    function (world) {
+      return "a small cafe";
+    },
+    function (world) {
+      return "the hall leading to " + linkToRoom(murd.OFFICE);
+    },
 ];
 
 function dispatchBankLiftButton(world, button) {
@@ -516,7 +524,7 @@ murd.BANK_LIFT = engine.MakeRoom({
   Description: function(world) {
     return "You're surrounded by the three walls of steel in the lift. "
            + "The open doors are facing "
-           + murd.BankFloorsDescriptions[this.floor]
+           + murd.BankFloorsDescriptions[this.floor](world)
            + ". There are three buttons here: 0, 1, 2.";
   },
   HandleAction: function(world, verb, words) {
@@ -585,12 +593,14 @@ murd.OFFICE = engine.MakeRoom({
       description += " It's dark outside.";
     }
     if ((this.timeWorking == 1
-         && world.GetFlag(murd.flags.foodEaten) == 0
-         && murd.PIZZA.location != world.INVENTORY
-         && murd.PIZZA.location != murd.OFFICE)
+         && ((world.GetFlag(murd.flags.foodEaten) == 0
+              && murd.PIZZA.location != world.INVENTORY
+              && murd.PIZZA.location != murd.OFFICE)
+             || !world.GetFlag(murd.flags.hasCleanHands)))
         || this.timeWorking == 3) {
       // As a hint.
-      description += " From here you can take the lift to go outside.";
+      description += " From here you can take " + linkToRoom(murd.BANK_LIFT)
+                     + " to go elsewhere.";
     }
     return description;
   },
@@ -607,7 +617,8 @@ murd.OFFICE = engine.MakeRoom({
     return out;
   },
   CanEnter: function(world) {
-    var description = "You exit the lift and walk to your cubicle.";
+    var description = "You exit " + linkToRoom(murd.BANK_LIFT)
+                      + " and walk to your cubicle.";
     if (murd.OFFICE.timeWorking == 0) {
       description += " Looks like nobody noticed how late you are.";
     }
@@ -638,7 +649,8 @@ murd.OFFICE = engine.MakeRoom({
     if (this.timeWorking == 3) {
       murd.OFFICE_PHOTO.dropIfHeld(world);
       world.Print(
-          "You try to take the lift down but it appears to be out of service. "
+          "You try to take " + linkToRoom(murd.BANK_LIFT)
+          + " down but it appears to be out of service. "
           + "Ugh, you'll have to take the stairs.<br>"
           + "As you're walking down, you stumble and nearly fall as you find "
           + "the <b>murder scene</b>! The body of your colleague Micha is "
@@ -700,8 +712,9 @@ murd.PIZZERIA = engine.MakeRoom({
     this.pizzaPaid = false;
   },
   Description: function(world) {
-    return "The pizzeria Tricolore, located near Tessinerplatz, is the place "
-           + "where you usually have lunch. "
+    return "The pizzeria Tricolore, located near "
+           + linkToRoom(murd.TESSINERPLATZ)
+           + ", is the place where you usually have lunch. "
            + "The pizza is mediocre but the prices are affordable for Zurich. "
            + "A bunch of people are having lunch here.";
   },
@@ -1056,7 +1069,7 @@ function MakeLiftButton(data) {
           "The doors close and the lift travels "
           + (data.floor > murd.BANK_LIFT.floor ? "upwards" : "downwards")
           + ". The doors open again, facing "
-          + murd.BankFloorsDescriptions[data.floor]
+          + murd.BankFloorsDescriptions[data.floor](world)
           + ".");
       murd.BANK_LIFT.floor = data.floor;
     },
