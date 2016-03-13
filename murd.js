@@ -24,6 +24,11 @@ function isShowerCommand(verb, words) {
       || ((verb == "use" || verb == "take") && words[0] == "shower");
 }
 
+function linkToRoom(room) {
+  return "<a href='javascript:eng.ProcessAction(&quot;go " + room.NAME
+         + "&quot;);'>" + room.TITLE + "</a>";
+}
+
 murd.BEDROOM = engine.MakeRoom({
   NAME: "bedroom",
   TITLE: "your bedroom",
@@ -41,8 +46,11 @@ murd.BEDROOM = engine.MakeRoom({
       description += " The annoying alarm clock is beeping loudly."
     }
     description +=
-        " Two doors are here, one leads to the restroom and one down to "
-        + "Brupbacherplatz.";
+        " Two doors are here, one leads to the "
+        + linkToRoom(murd.RESTROOM)
+        + " and one down to "
+        + linkToRoom(murd.BRUPBACHERPLATZ)
+        + ".";
     return description;
   },
 
@@ -132,13 +140,15 @@ murd.RESTROOM = engine.MakeRoom({
             " A refreshing current of fresh air blows in from the open window.";
       } else {
         description += " A cold draft of air, straight from the mountains into "
-                       + "your window, makes you shiver.";
+                       + "your window, makes you shiver. There's ";
       }
       this.descriptionCount++;
     } else {
       description += " The restroom smells a bit. There's a window facing the "
-                     + "beautiful mountain of Uetliberg.";
+                     + "beautiful mountain of Uetliberg and ";
     }
+    description += "a door leading back to your " + linkToRoom(murd.BEDROOM)
+        + ".";
     return description;
   },
 
@@ -200,8 +210,10 @@ murd.BRUPBACHERPLATZ = engine.MakeRoom({
     "plaza",
   ],
   Description: function(world) {
-    return "You're in a small park. From here you can go back into your "
-           + "bedroom, to the local bar, or to the Wiedikon train station.";
+    return "You're in a small park. From here you can go back into "
+           + linkToRoom(murd.BEDROOM) + ", to "
+           + linkToRoom(murd.BAR) + ", or to "
+           + linkToRoom(murd.WIEDIKON) + ".";
   },
   CanEnter: function(world) {
     if (world.location == murd.BEDROOM) {
@@ -255,13 +267,15 @@ function DescriptionTrainLines(room) {
       + "stations:";
   var separator = " ";
   room.TrainLines().forEach(
-      function(name) { output += separator + name; separator = ", "; });
+      function(r) {
+        output += separator + linkToRoom(r); separator = ", ";
+      });
   return output + "<br>";
 }
 
 function ExitsTrainLines(room, exits) {
   room.TrainLines().forEach(
-      function(name) { exits[name.toLowerCase()] = true; });
+      function(r) { exits[r.NAME.toLowerCase()] = true; });
   return exits;
 }
 
@@ -270,14 +284,15 @@ murd.WIEDIKON = engine.MakeRoom({
   TITLE: "the Wiedikon train station",
   ALIASES: ["station", "bahnhof",],
   TrainLines: function() {
-    return ["Enge", "Oerlikon", "Airport", "Hauptbahnhof"];
+    return [murd.ENGE, murd.OERLIKON, murd.AIRPORT, murd.HAUPTBAHNHOF];
   },
   Description: function(world) {
     return "You're in Wiedikon, a small train station.<br>"
            + DescriptionTrainLines(murd.WIEDIKON)
            + "The station has a big clock, always on time. Damn, unlike it, "
            + "you're running late.<br>"
-           + "You can walk to Brupbacherplatz from here.";
+           + "You can walk to " + linkToRoom(murd.BRUPBACHERPLATZ)
+           + " from here.";
   },
   CanEnter: function(world) {
     world.Print("You enter the Wiedikon train station.");
@@ -322,14 +337,14 @@ murd.ENGE = engine.MakeRoom({
   TITLE: "the Enge train station",
   ALIASES: ["station", "bahnhof",],
   TrainLines: function() {
-    return ["Wiedikon", "Oerlikon", "Airport", "Hauptbahnhof"];
+    return [murd.WIEDIKON, murd.OERLIKON, murd.AIRPORT, murd.HAUPTBAHNHOF];
   },
   Description: function(world) {
     return "You're at the beautiful Enge train station. This whole thing was "
         + "built with granite from Ticino. Thousands of people commute here "
         + "everyday, going through the imposing facade.<br>"
         + DescriptionTrainLines(murd.ENGE)
-        + "You can walk outside to Tessinerplatz.";
+        + "You can walk outside to " + linkToRoom(murd.TESSINERPLATZ) + ".";
   },
   CanEnter: function(world) {
     if (world.location == murd.WIEDIKON) {
@@ -403,8 +418,8 @@ murd.TESSINERPLATZ = engine.MakeRoom({
     return "You're in Tessinerplatz, a beautiful square in front of the Enge "
            + "train station.<br>"
            + "The square has a nice fountain and a few trees.<br>"
-           + "From here you can walk to the office reception of the bank where "
-           + "you work or to the pizzeria.";
+           + "From here you can walk to " + linkToRoom(murd.BANK_RECEPTION)
+           + " or to " + linkToRoom(murd.PIZZERIA) + ".";
   },
   DescribeObjects: function(world, objects) {
     var out = []
@@ -446,8 +461,8 @@ murd.BANK_RECEPTION = engine.MakeRoom({
   TITLE: "the reception of the bank where you work",
   Description: function(world) {
     return "You're in the office reception of the bank where you work. From "
-           + "here you can reach the lift or you can walk out to "
-           + "Tessinerplatz.";
+           + "here you can reach " + linkToRoom(murd.BANK_LIFT)
+           + " or you can walk out to " + linkToRoom(murd.TESSINERPLATZ) + ".";
   },
   HandleAction: HandleUseLiftAction,
   CanEnter: function(world) {
@@ -491,7 +506,7 @@ function dispatchBankLiftButton(world, button) {
 
 murd.BANK_LIFT = engine.MakeRoom({
   NAME: "lift",
-  TITLE: "the lift in the bank where you work",
+  TITLE: "the lift",
   Init: function() {
     this.floor = 0;
   },
