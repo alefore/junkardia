@@ -898,6 +898,14 @@ murd.SINK = engine.MakeObject({
   NAME: "sink",
   TITLE: "the sink",
   INITIAL_LOCATION: murd.RESTROOM,
+  CanGet: function(world) {
+    world.Print(pickRandomMessage([
+        "It's attached to the wall.",
+        "You hang on to it for a few seconds to steady yourself. "
+        + "You let it go.",
+        "You can't carry the sink around, that makes no sense."]));
+    return false;
+  },
 });
 
 murd.TOOTH_BRUSH = engine.MakeObject({
