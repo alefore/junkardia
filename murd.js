@@ -826,8 +826,7 @@ murd.BEDROOM_PLANT = engine.MakeObject({
   dropIfHeld: function(world) {
     if (murd.BEDROOM_PLANT.location != world.INVENTORY) { return; }
     world.Print("You set the orchid down. It belongs in your apartment.");
-    // TODO: Inhibit the "Ok" message below.
-    world.Drop(murd.BEDROOM_PLANT);
+    murd.BEDROOM.container.Add(this)
   }
 });
 
@@ -1194,8 +1193,7 @@ murd.OFFICE_PHOTO = engine.MakeObject({
   dropIfHeld: function(world) {
     if (murd.OFFICE_PHOTO.location != world.INVENTORY) { return; }
     world.Print("You set the photo back on the desk.");
-    // TODO: Inhibit the "Ok" message below.
-    world.Drop(murd.OFFICE_PHOTO);
+    murd.OFFICE_DESK.container.Add(this)
   }
 });
 
