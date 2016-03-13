@@ -268,10 +268,7 @@ function ExitsTrainLines(room, exits) {
 murd.WIEDIKON = engine.MakeRoom({
   NAME: "wiedikon",
   TITLE: "the Wiedikon train station",
-  ALIASES: [
-    "station",
-    "bahnhof",
-  ],
+  ALIASES: ["station", "bahnhof",],
   TrainLines: function() {
     return ["Enge", "Oerlikon", "Airport", "Hauptbahnhof"];
   },
@@ -323,6 +320,7 @@ murd.WIEDIKON = engine.MakeRoom({
 murd.ENGE = engine.MakeRoom({
   NAME: "enge",
   TITLE: "the Enge train station",
+  ALIASES: ["station", "bahnhof",],
   TrainLines: function() {
     return ["Wiedikon", "Oerlikon", "Airport", "Hauptbahnhof"];
   },
@@ -396,6 +394,7 @@ murd.OERLIKON = engine.MakeRoom({
 murd.TESSINERPLATZ = engine.MakeRoom({
   NAME: "tessinerplatz",
   TITLE: "Tessinerplatz",
+  ALIASES: ["street", "out", "outside", "square", "platz", "plaza",],
   Init: function() {
     // Did we already warn that uprooting the tree is a bad idea?
     this.warnedUprootTree = false;
