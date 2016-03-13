@@ -49,6 +49,10 @@ murd.BEDROOM = engine.MakeRoom({
     var out = []
     for (var i in objects) {
       var obj = objects[i];
+      if (obj == murd.ALARM_CLOCK) {
+        // Either explicitly mentioned or the player already interacted with it.
+        continue;
+      }
       if (obj == murd.BED || obj == murd.NIGHTSTAND) {
         continue;  // Already explicitly mentioned.
       }
@@ -83,6 +87,7 @@ murd.BEDROOM = engine.MakeRoom({
       }
       murd.BEDROOM_PLANT.dropIfHeld(world);
     }
+    murd.ALARM_CLOCK.dropIfHeld(world);
     return true;
   },
 
@@ -94,14 +99,7 @@ murd.BEDROOM = engine.MakeRoom({
       return true;
     }
     if (verb == "turn" && words[0] == "off" && words[1] == "clock") {
-      if (!this.alarmClockOn) {
-        world.Print("Eh? The alarm clock is already off.");
-        return true;
-      }
-      this.alarmClockOn = false;
-      murd.NIGHTSTAND.container.Add(murd.WALLET);
-      world.Print("Ahh, finally a bit of peace. The room looks different "
-                  + "without all this noise.");
+      murd.ALARM_CLOCK.Use(world, null);
       return true;
     }
     return false;
@@ -710,10 +708,41 @@ murd.NIGHTSTAND = engine.MakeObject({
     return "It's a nice bedside table, made of beautiful wood. "
            + "It was pretty affordable."
   },
+  Use: function(world, onWhat) {
+    world.Print(pickRandomMessage([
+        "You have no use for the nightstand.",
+        "Eh? For what?"]));
+  },
   CanGet: function(world) {
     world.Print("Nah, it's a bit heavy and you have no use for it.");
     return false;
   },
+});
+
+murd.ALARM_CLOCK = engine.MakeObject({
+  NAME: "clock",
+  TITLE: "an alarm clock that's beeping loudly",
+  INITIAL_LOCATION: murd.NIGHTSTAND,
+  Use: function(world, onWhat) {
+    if (!murd.BEDROOM.alarmClockOn) {
+      world.Print("You have no use for the clock right now. "
+                  + "However, looking at it reminds you that you're running a "
+                  + "bit late for work.");
+      return;
+    }
+    murd.BEDROOM.alarmClockOn = false;
+    murd.NIGHTSTAND.container.Add(murd.WALLET);
+    world.Print("You turn off the clock. "
+                + "Ahh, finally a bit of peace. "
+                + "The room looks different without all this noise.");
+    this.TITLE = "an alarm clock";
+  },
+  dropIfHeld: function(world) {
+    if (this.location != world.INVENTORY) { return; }
+    world.Print("The alarm clock is plugged to the wall. You set it over the "
+                + "nightstand.");
+    murd.NIGHTSTAND.container.Add(this)
+  }
 });
 
 murd.BED = engine.MakeObject({
@@ -1346,6 +1375,7 @@ murd.Game.prototype.ROOMS = [
 ];
 murd.Game.prototype.OBJECTS = [
   murd.NIGHTSTAND,
+  murd.ALARM_CLOCK,
   murd.BED,
   murd.WALLET,
   murd.BEDROOM_PLANT,
