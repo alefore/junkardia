@@ -396,10 +396,28 @@ murd.OERLIKON = engine.MakeRoom({
 murd.TESSINERPLATZ = engine.MakeRoom({
   NAME: "tessinerplatz",
   TITLE: "Tessinerplatz",
+  Init: function() {
+    // Did we already warn that uprooting the tree is a bad idea?
+    this.warnedUprootTree = false;
+  },
   Description: function(world) {
     return "You're in Tessinerplatz, a beautiful square in front of the Enge "
-           + "train station. From here you can walk to the office reception of "
-           + "the bank where you work or to the pizzeria.";
+           + "train station.<br>"
+           + "The square has a nice fountain and a few trees.<br>"
+           + "From here you can walk to the office reception of the bank where "
+           + "you work or to the pizzeria.";
+  },
+  DescribeObjects: function(world, objects) {
+    var out = []
+    for (var i in objects) {
+      var obj = objects[i];
+      if (obj == murd.TESSINERPLATZ_FOUNTAIN
+          || obj == murd.TESSINERPLATZ_TREE) {
+        continue;  // Already described.
+      }
+      out.push(obj)
+    }
+    return out;
   },
   CanEnter: function(world) {
     if (world.location == murd.OFFICE) {
@@ -908,6 +926,34 @@ murd.TESSINERPLATZ_FOUNTAIN = engine.MakeObject({
   },
 });
 
+murd.TESSINERPLATZ_TREE = engine.MakeObject({
+  NAME: "tree",
+  TITLE: "a tree",
+  INITIAL_LOCATION: murd.TESSINERPLATZ,
+  Detail: function(world) {
+    return "A nice flush tree, not very tall. It provides some shade."
+  },
+  Use: function(world, onWhat) {
+    // TODO: When it gets dark, adjust the message.
+    world.Print(pickRandomMessage([
+        "You stand on the shadow of the tree.",
+        "The tree protects you from the sun."]));
+  },
+  CanGet: function(world) {
+    if (!murd.TESSINERPLATZ.warnedUprootTree) {
+      world.Print("Umm, uprooting the tree is probably not a good idea.");
+      murd.TESSINERPLATZ.warnedUprootTree = true;
+    } else {
+      world.Print("You start trying to uproot the tree. A police car drives by "
+                  + "and arrests you.<br>"
+                  + "<h1>Game over!</h1>");
+      world.location = murd.JAIL;
+      world.DescribeRoom();
+    }
+    return false;
+  },
+});
+
 murd.BANK_PALM_TREE = engine.MakeObject({
   NAME: "palm",
   TITLE: "a palm tree",
@@ -1312,6 +1358,7 @@ murd.Game.prototype.OBJECTS = [
   murd.TOOTH_BRUSH,
 
   murd.TESSINERPLATZ_FOUNTAIN,
+  murd.TESSINERPLATZ_TREE,
 
   murd.BANK_PALM_TREE,
 
