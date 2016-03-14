@@ -118,13 +118,14 @@ murd.BEDROOM = engine.MakeRoom({
   },
 
   Exits: function(world) {
-    return {"restroom": true, "brupbacherplatz": true}
+    return {"home-restroom": true, "brupbacherplatz": true}
   },
 });
 
 murd.RESTROOM = engine.MakeRoom({
-  NAME: "restroom",
+  NAME: "home-restroom",
   TITLE: "the restroom",
+  ALIASES: ["restroom"],
 
   Init: function() {
     // TODO: Make this a property of RESTROOM_WINDOW.
@@ -753,7 +754,7 @@ murd.JAIL = engine.MakeRoom({
 
 murd.PIZZERIA = engine.MakeRoom({
   NAME: "pizzeria",
-  TITLE: "the pizzeria",
+  TITLE: "the Pizzeria Tricolore",
   Init: function() {
     // So that if he drops the pizza and takes it again, we don't show him
     // paying again.
@@ -764,7 +765,8 @@ murd.PIZZERIA = engine.MakeRoom({
            + linkToRoom(murd.TESSINERPLATZ)
            + ", is the place where you usually have lunch. "
            + "The pizza is mediocre but the prices are affordable for Zurich. "
-           + "A bunch of people are having lunch here.";
+           + "A bunch of people are having lunch here. There's "
+           + linkToRoom(murd.PIZZERIA_RESTROOM) + " in the back.";
   },
   CanEnter: function(world) {
     if (murd.OFFICE.timeWorking == 0) {
@@ -775,7 +777,54 @@ murd.PIZZERIA = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"tessinerplatz": true};
+    return {"tessinerplatz": true, "pizzeria-restroom": true};
+  },
+});
+
+murd.PIZZERIA_RESTROOM = engine.MakeRoom({
+  NAME: "pizzeria-restroom",
+  TITLE: "a smelly restroom",
+  ALIASES: ["restroom", "toilet",],
+  Init: function() {
+    this.hasUsedSink = false;
+    this.warnedFilthy = false;
+    this.thrownUp = false;
+    this.warnedVomit = false;
+  },
+  Description: function(world) {
+    var description = "You're inside the filthy restroom of "
+        + linkToRoom(murd.PIZZERIA) + ", on the floor of which all kinds of "
+        + "germs thrive.";
+    if (this.thrownUp) {
+      description += " Oh, look: there's vomit on the floor.";
+    }
+    return description;
+  },
+  DescribeObjects: function(world, objects) {
+    var out = []
+    for (var i in objects) {
+      var obj = objects[i];
+      if (obj == murd.PIZZERIA_GERMS
+          || obj == murd.PIZZERIA_FLOOR
+          || obj == murd.PIZZERIA_VOMIT) {
+        continue;  // Already explicitly mentioned.
+      }
+      out.push(obj)
+    }
+    return out;
+  },
+  Exits: function(world) {
+    return {"pizzeria": true};
+  },
+  CanLeave: function(world, toRoom) {
+    var description = "You turn the knob and leave the disgusting restroom.";
+    if (world.GetFlag(murd.flags.hasCleanHands)) {
+      description += " Ugh, the knob was very greasy. "
+                     + "Your hands are now very greasy.";
+      world.SetFlag(murd.flags.hasCleanHands, false);
+    }
+    world.Print(description);
+    return true;
   },
 });
 
@@ -1342,13 +1391,34 @@ murd.PIZZA = engine.MakeObject({
       }
     }
 
-    world.SetFlag(murd.flags.hasCleanHands, false);
+    if (world.location == murd.PIZZERIA_RESTROOM) {
+      if (murd.PIZZERIA_RESTROOM.thrownUp) {
+        world.Print("I refuse to eat the pizza in this filthy place.");
+        return;
+      }
+      world.Print("You eat the pizza but the smell of the restroom is so "
+                  + "disgusting that you immediately throw up. "
+                  + "Damn. Your vomit quickly dissolves in the mulch. "
+                  + "The germs would thank you for your contribution, if only "
+                  + "they could speak.");
+      murd.PIZZERIA.container.Add(murd.PIZZA);
+      murd.PIZZERIA.pizzaPaid = false;  // Needs to pay again.
+      murd.PIZZERIA_RESTROOM.thrownUp = true;
+      murd.PIZZERIA_RESTROOM.container.Add(murd.PIZZERIA_VOMIT);
+      return;
+    }
+
     world.SetFlag(murd.flags.foodEaten,
                   world.GetFlag(murd.flags.foodEaten) + 1);
     world.Destroy(this);
-    world.Print("You eat the slice of pizza. It's not the best you've eaten, "
-                + "but it certainly calms your appetite. Ugh, your hands are "
-                + "now very greasy.");
+    var description =
+        "You eat the slice of pizza. It's not the best you've eaten, but it "
+        + "certainly calms your appetite.";
+    if (world.GetFlag(murd.flags.hasCleanHands)) {
+      world.SetFlag(murd.flags.hasCleanHands, false);
+      description += " Ugh, your hands are now very greasy.";
+    }
+    world.Print(description);
   },
   CanGet: function(world) {
     if (murd.PIZZERIA.pizzaPaid) {
@@ -1363,6 +1433,118 @@ murd.PIZZA = engine.MakeObject({
     world.Print("You take your credit card out of your wallet and pay for it.");
     return true;
   }
+});
+
+// TODO: Rename to sink, once the aliases are improved.
+murd.PIZZERIA_SINK = engine.MakeObject({
+  NAME: "washbowl",
+  TITLE: "a washbowl",
+  INITIAL_LOCATION: murd.PIZZERIA_RESTROOM,
+  Detail: function(world) {
+    var description = "A filthy looking sink.";
+    if (!murd.PIZZERIA_RESTROOM.hasUsedSink) {
+      description += " You wonder if water actually comes out of it.";
+    }
+    return description;
+  },
+  Use: function(world, onWhat) {
+    if (world.GetFlag(murd.flags.hasCleanHands)) {
+      world.Print(pickRandomMessage([
+          "Hmm, nah, my hands are already clean.",
+          "I'd rather not touch it with my clean hands."]));
+    } else if (!murd.PIZZERIA_RESTROOM.warnedFilthy) {
+      murd.PIZZERIA_RESTROOM.warnedFilthy = true;
+      world.Print("It looks very disgusting. "
+                  + "Not sure touching the knob is a good idea. Hmm. "
+                  + "Maybe not.");
+    } else {
+      murd.PIZZERIA_RESTROOM.hasUsedSink = true;
+      world.Print("You open the knob and a frail stream of water trails down, "
+                  + "like tears. You wash your hands as well as you can, which "
+                  + "is not that good, but ... shrug, better than nothing. "
+                  + "Your hands are now (mostly) clean.");
+      world.SetFlag(murd.flags.hasCleanHands, true);
+    }
+  },
+  CanGet: function(world) {
+    world.Print("Hmm, no, thanks, that's very dirty.");
+    return false;
+  },
+});
+
+murd.PIZZERIA_GERMS = engine.MakeObject({
+  NAME: "germs",
+  TITLE: "germs",
+  INITIAL_LOCATION: murd.PIZZERIA_RESTROOM,
+  Detail: function(world) {
+    return "Germs are invisible, but I'm sure there's many of them in here.";
+  },
+  Use: function(world, onWhat) {
+    world.Print(pickRandomMessage([
+        "Uh, what for?",
+        "Uh, what?",
+        "I don't want to get sick."]));
+  },
+  CanGet: function(world) {
+    world.Print(pickRandomMessage([
+        "Eww, that's disgusting!",
+        "No way I'm touching that!"]));
+    return false;
+  },
+});
+
+murd.PIZZERIA_FLOOR = engine.MakeObject({
+  NAME: "floor",
+  TITLE: "floor",
+  INITIAL_LOCATION: murd.PIZZERIA_RESTROOM,
+  Detail: function(world) {
+    var description =
+        "The floor looks very disgusting. No way to tell when it was last "
+        + "cleaned.";
+    if (murd.PIZZERIA_RESTROOM.thrownUp) {
+      description += " And, yeah: your vomit is still there.";
+    }
+    return description;
+  },
+  Use: function(world, onWhat) {
+    world.Print(pickRandomMessage([
+        "You mean like... sit down? No way!",
+        "Yeah, right, you expect me to sleep there? Or what?",
+        "I have no use for it.",]));
+  },
+  CanGet: function(world) {
+    world.Print("That makes no sense.");
+    return false;
+  },
+});
+
+murd.PIZZERIA_VOMIT = engine.MakeObject({
+  NAME: "vomit",
+  TITLE: "vomit",
+  INITIAL_LOCATION: null,
+  Detail: function(world) {
+    return "The regurgitated remains of your pizza in the floor camouflage "
+        + "among other things.";
+  },
+  Use: function(world, onWhat) {
+    this.CanGet(world);
+  },
+  CanGet: function(world) {
+    if (!murd.PIZZERIA_RESTROOM.warnedVomit) {
+      murd.PIZZERIA_RESTROOM.warnedVomit = true;
+      world.Print("Hmm, that's probably not a good idea...");
+      return;
+    }
+    world.Print("You grab the vomit as well as you can and smear it all over "
+                + "your clothes. You start singing random voices very loudly. "
+                + "The manager of the Pizzera, Don Leone, calls the police. "
+                + "The police come by, knock the door down, stop your silly "
+                + "chants and arrests you.<br>"
+                + "<h1>Game over!</h1>");
+    world.location = murd.JAIL;
+    world.DescribeRoom();
+    return false;
+  },
 });
 
 murd.JAIL_BED = engine.MakeObject({
@@ -1467,7 +1649,7 @@ murd.Game.prototype.InitState = function(world) {
 murd.Game.prototype.HandleAction = function(world, verb, words) {
   if (verb == "open") {
     if (words[0] == "door") {
-      if (!("restroom" in world.location.Exits())) {
+      if (world.location != murd.BEDROOM) {
         return false;
       }
       world.SetFlag("restroomDoorOpen", true);
@@ -1504,6 +1686,7 @@ murd.Game.prototype.ROOMS = [
   murd.OERLIKON,
   murd.TESSINERPLATZ,
   murd.PIZZERIA,
+  murd.PIZZERIA_RESTROOM,
   murd.BANK_RECEPTION,
   murd.BANK_LIFT,
   murd.OFFICE,
@@ -1541,6 +1724,10 @@ murd.Game.prototype.OBJECTS = [
   murd.BANK_SOAP,
 
   murd.PIZZA,
+  murd.PIZZERIA_SINK,
+  murd.PIZZERIA_GERMS,
+  murd.PIZZERIA_FLOOR,
+  murd.PIZZERIA_VOMIT,
 
   murd.JAIL_BED,
   murd.JAIL_MOUSE,
