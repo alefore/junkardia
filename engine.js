@@ -157,15 +157,23 @@ engine.World.prototype.Destroy = function(obj) {
   this.LIMBO.Add(obj);
 };
 
-engine.World.prototype.DescribeRoom = function() {
-  this.Print(this.location.Description(this));
-
-  var objects = this.location.GetReachableObjects();
-  objects = this.location.DescribeObjects(this, objects);
+engine.World.prototype.DescribeObjects = function(container) {
+  var objects = container.objects;
+  objects = container.DescribeObjects(this, objects);
   for (var i in objects) {
     var obj = objects[i];
     this.Print(obj.Overview(this));
   }
+};
+
+engine.World.prototype.DescribeRoom = function() {
+  this.Print(this.location.Description(this));
+  this.DescribeObjects(this.location);
+};
+
+engine.World.prototype.DescribeObject = function(obj) {
+  this.Print(obj.Detail(this));
+  this.DescribeObjects(obj);
 };
 
 engine.World.prototype.Enter = function(room) {
@@ -211,7 +219,7 @@ engine.World.prototype.LookAction = function(words) {
           && !this.INVENTORY.IsReachable(obj)) {
         this.game.NotHere(this, obj);
       } else {
-        this.Print(obj.Detail(this));
+        this.DescribeObject(obj);
       }
     } else {
       this.game.UnknownObject(this, words.join(' '));
@@ -399,7 +407,6 @@ engine.Entity.prototype.Description = function(world) {
   return '';
 };
 engine.Entity.prototype.Add = function(obj) {
-  console.debug("Adding " + obj.TITLE + " to " + this.TITLE);
   if (obj.location !== null) {
     var old = obj.location;
     old.objects.splice(old.objects.indexOf(obj), 1);  
@@ -426,6 +433,9 @@ engine.Entity.prototype.GetReachableObjects = function() {
     result = result.concat(o.GetReachableObjects());
   }
   return result;
+};
+engine.Entity.prototype.DescribeObjects = function(world, objects) {
+  return objects;
 };
 
 engine.MakeEntity = function(superclass, data) {
@@ -457,9 +467,6 @@ engine.Room.prototype.CanEnter = function(world) {
 
 engine.Room.prototype.Exits = function(world) {
   return {};
-};
-engine.Room.prototype.DescribeObjects = function(world, objects) {
-  return objects;
 };
 engine.Room.prototype.HandleAction = function(world, verb, words) {
   return false;
