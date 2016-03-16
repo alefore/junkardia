@@ -385,6 +385,7 @@ engine.Engine.prototype.ProcessAction = function(action) {
     this.actionHistory.push(action);
   }
   this.actionIndex = this.actionHistory.length;
+  this.input_.focus();
 };
 
 engine.Entity = function() {
