@@ -57,7 +57,7 @@ murd.BEDROOM = engine.MakeRoom({
     return description;
   },
 
-  DescribeObjects: function(world, objects) {
+  DescribeContents: function(world, objects) {
     var out = []
     for (var i in objects) {
       var obj = objects[i];
@@ -156,7 +156,7 @@ murd.RESTROOM = engine.MakeRoom({
     return description;
   },
 
-  DescribeObjects: function(world, objects) {
+  DescribeContents: function(world, objects) {
     var out = []
     for (var i in objects) {
       var obj = objects[i];
@@ -426,7 +426,7 @@ murd.TESSINERPLATZ = engine.MakeRoom({
            + "From here you can walk to " + linkToRoom(murd.BANK_RECEPTION)
            + " or to " + linkToRoom(murd.PIZZERIA) + ".";
   },
-  DescribeObjects: function(world, objects) {
+  DescribeContents: function(world, objects) {
     var out = []
     for (var i in objects) {
       var obj = objects[i];
@@ -562,7 +562,7 @@ murd.BANK_LIFT = engine.MakeRoom({
     }
     return output;
   },
-  DescribeObjects: function(world, objects) {
+  DescribeContents: function(world, objects) {
     var out = []
     for (var i in objects) {
       var obj = objects[i];
@@ -646,7 +646,7 @@ murd.OFFICE = engine.MakeRoom({
     }
     return description;
   },
-  DescribeObjects: function(world, objects) {
+  DescribeContents: function(world, objects) {
     var out = []
     for (var i in objects) {
       var obj = objects[i];
@@ -736,7 +736,7 @@ murd.JAIL = engine.MakeRoom({
     }
     return false;
   },
-  DescribeObjects: function(world, objects) {
+  DescribeContents: function(world, objects) {
     var out = []
     for (var i in objects) {
       var obj = objects[i];
@@ -800,7 +800,7 @@ murd.PIZZERIA_RESTROOM = engine.MakeRoom({
     }
     return description;
   },
-  DescribeObjects: function(world, objects) {
+  DescribeContents: function(world, objects) {
     var out = []
     for (var i in objects) {
       var obj = objects[i];

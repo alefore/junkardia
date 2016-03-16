@@ -157,9 +157,9 @@ engine.World.prototype.Destroy = function(obj) {
   this.LIMBO.Add(obj);
 };
 
-engine.World.prototype.DescribeObjects = function(container) {
+engine.World.prototype.DescribeContents = function(container) {
   var objects = container.objects;
-  objects = container.DescribeObjects(this, objects);
+  objects = container.DescribeContents(this, objects);
   for (var i in objects) {
     var obj = objects[i];
     this.Print(obj.Overview(this));
@@ -168,12 +168,12 @@ engine.World.prototype.DescribeObjects = function(container) {
 
 engine.World.prototype.DescribeRoom = function() {
   this.Print(this.location.Description(this));
-  this.DescribeObjects(this.location);
+  this.DescribeContents(this.location);
 };
 
 engine.World.prototype.DescribeObject = function(obj) {
   this.Print(obj.Detail(this));
-  this.DescribeObjects(obj);
+  this.DescribeContents(obj);
 };
 
 engine.World.prototype.Enter = function(room) {
@@ -434,7 +434,7 @@ engine.Entity.prototype.GetReachableObjects = function() {
   }
   return result;
 };
-engine.Entity.prototype.DescribeObjects = function(world, objects) {
+engine.Entity.prototype.DescribeContents = function(world, objects) {
   return objects;
 };
 
