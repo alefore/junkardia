@@ -16,8 +16,8 @@ engine.World.prototype.Init = function(game) {
   this.flags = {};
   this.location = game.START_LOCATION;
   this.location.visited = true;
-  this.INVENTORY = new engine.Container(null);
-  this.LIMBO = new engine.Container(null);
+  this.INVENTORY = new engine.Entity();
+  this.LIMBO = new engine.Entity();
   this.game.InitState(this);
   
   for (var i in game.OBJECTS) {
@@ -29,7 +29,7 @@ engine.World.prototype.Init = function(game) {
       loc = this.LIMBO;
     }
     obj.location = null;
-    loc.container.Add(obj);
+    loc.Add(obj);
   }
 
   this.Print(game.INTRO);
@@ -105,7 +105,7 @@ engine.World.prototype.LocateObject = function(words) {
 
   // Look for aliases in the current room.
   matches = [];
-  var loc = this.location.container.GetReachableObjects();
+  var loc = this.location.GetReachableObjects();
   for (var i in loc) {
     var obj = loc[i];
     if (obj.ALIASES.indexOf(words[0]) >= 0) {
@@ -144,7 +144,7 @@ engine.World.prototype.Get = function(obj) {
 };
 
 engine.World.prototype.Drop = function(obj) {
-  this.location.container.Add(obj);
+  this.location.Add(obj);
   this.game.Dropped(this, obj);
 };
 
@@ -160,7 +160,7 @@ engine.World.prototype.Destroy = function(obj) {
 engine.World.prototype.DescribeRoom = function() {
   this.Print(this.location.Description(this));
 
-  var objects = this.location.container.GetReachableObjects();
+  var objects = this.location.GetReachableObjects();
   objects = this.location.DescribeObjects(this, objects);
   for (var i in objects) {
     var obj = objects[i];
@@ -207,7 +207,7 @@ engine.World.prototype.LookAction = function(words) {
     var obj = this.LocateObject(words);
     if (obj != null) {
       // TODO(bubble): rework inventory.
-      if (!this.location.container.IsReachable(obj)
+      if (!this.location.IsReachable(obj)
           && !this.INVENTORY.IsReachable(obj)) {
         this.game.NotHere(this, obj);
       } else {
@@ -225,7 +225,7 @@ engine.World.prototype.UseAction = function(words) {
     this.game.UnknownObject(this, words.join(' '));
     return;
   }
-  if (!this.location.container.IsReachable(obj)
+  if (!this.location.IsReachable(obj)
       && !this.INVENTORY.IsReachable(obj)) {
     this.game.NotHere(this, obj);
     return;
@@ -238,7 +238,7 @@ engine.World.prototype.UseAction = function(words) {
     }
     onWhat = this.LocateObject(words);
     if (onWhat != null) {
-      if (!this.location.container.IsReachable(onWhat)
+      if (!this.location.IsReachable(onWhat)
           && !this.INVENTORY.IsReachable(onWhat)) {
         this.game.NotHere(this, onWhat);
         return
@@ -253,7 +253,7 @@ engine.World.prototype.GetAction = function(words) {
   if (obj != null) {
     if (this.INVENTORY.IsReachable(obj)) {
       this.game.AlreadyHave(this, obj);
-    } else if (!this.location.container.IsReachable(obj)) {
+    } else if (!this.location.IsReachable(obj)) {
       this.game.NotHere(this, obj);
     } else {
       this.Get(obj);
@@ -387,44 +387,9 @@ engine.Engine.prototype.ProcessAction = function(action) {
   this.actionIndex = this.actionHistory.length;
 };
 
-engine.Container = function(parent) {
-  if (parent === null) {
-    parent = this;
-    this.container = this;
-  }
-  this.parent = parent;
+engine.Entity = function() {
   this.objects = [];
 };
-engine.Container.prototype.Add = function(obj) {
-  if (obj.location !== null) {
-    var old = obj.location.container;
-    old.objects.splice(old.objects.indexOf(obj), 1);  
-  }
-  this.objects.push(obj);
-  obj.location = this.parent;
-};
-engine.Container.prototype.IsReachable = function(obj) {
-  if (obj.location.container === this) {
-    return true;
-  }
-  for (i in this.objects) {
-    var o = this.objects[i];
-    if (o.container.IsReachable(obj)) {
-      return true;
-    }
-  }
-  return false;
-};
-engine.Container.prototype.GetReachableObjects = function() {
-  result = this.objects.slice(0);
-  for (i in this.objects) {
-    var o = this.objects[i];
-    result = result.concat(o.container.GetReachableObjects());
-  }
-  return result;
-};
-
-engine.Entity = function() {};
 engine.Entity.prototype.NAME = null;
 engine.Entity.prototype.TITLE = null;
 engine.Entity.prototype.ALIASES = [];
@@ -432,21 +397,54 @@ engine.Entity.prototype.Init = function(world) {};
 engine.Entity.prototype.Description = function(world) {
   return '';
 };
+engine.Entity.prototype.Add = function(obj) {
+  console.debug("Adding " + obj.TITLE + " to " + this.TITLE);
+  if (obj.location !== null) {
+    var old = obj.location;
+    old.objects.splice(old.objects.indexOf(obj), 1);  
+  }
+  this.objects.push(obj);
+  obj.location = this;
+};
+engine.Entity.prototype.IsReachable = function(obj) {
+  if (obj.location === this) {
+    return true;
+  }
+  for (var i in this.objects) {
+    var o = this.objects[i];
+    if (o.IsReachable(obj)) {
+      return true;
+    }
+  }
+  return false;
+};
+engine.Entity.prototype.GetReachableObjects = function() {
+  result = this.objects.slice(0);
+  for (var i in this.objects) {
+    var o = this.objects[i];
+    result = result.concat(o.GetReachableObjects());
+  }
+  return result;
+};
 
 engine.MakeEntity = function(superclass, data) {
   newClass = function() {
     this.Init();
-    this.container = new engine.Container(this);
+    superclass.call(this);
   };
   newClass.prototype = new superclass();
+  newClass.prototype.constructor = newClass;
   for (key in data) {
     newClass.prototype[key] = data[key];
   }
   return new newClass();
 };
 
-engine.Room = function() {};
+engine.Room = function() {
+  engine.Entity.call(this);
+};
 engine.Room.prototype = new engine.Entity();
+engine.Room.prototype.constructor = engine.Room;
 engine.Room.prototype.visited = false;
 engine.Room.prototype.CanLeave = function(world, toRoom) {
   return true;
@@ -470,8 +468,11 @@ engine.MakeRoom = function(data) {
   return engine.MakeEntity(engine.Room, data);
 };
 
-engine.Object = function() {};
+engine.Object = function() {
+  engine.Entity.call(this);
+};
 engine.Object.prototype = new engine.Entity();
+engine.Object.prototype.constructor = engine.Object;
 engine.Object.prototype.INITIAL_LOCATION = null;
 engine.Object.prototype.Overview = function(world) {
   if (this.location instanceof engine.Object) {

@@ -861,7 +861,7 @@ murd.ALARM_CLOCK = engine.MakeObject({
       return;
     }
     murd.BEDROOM.alarmClockOn = false;
-    murd.NIGHTSTAND.container.Add(murd.WALLET);
+    murd.NIGHTSTAND.Add(murd.WALLET);
     world.Print("You turn off the clock. "
                 + "Ahh, finally a bit of peace. "
                 + "The room looks different without all this noise.");
@@ -871,7 +871,7 @@ murd.ALARM_CLOCK = engine.MakeObject({
     if (this.location != world.INVENTORY) { return; }
     world.Print("The alarm clock is plugged to the wall. You set it over the "
                 + "nightstand.");
-    murd.NIGHTSTAND.container.Add(this)
+    murd.NIGHTSTAND.Add(this)
   }
 });
 
@@ -956,7 +956,7 @@ murd.BEDROOM_PLANT = engine.MakeObject({
   dropIfHeld: function(world) {
     if (murd.BEDROOM_PLANT.location != world.INVENTORY) { return; }
     world.Print("You set the orchid down. It belongs in your apartment.");
-    murd.BEDROOM.container.Add(this)
+    murd.BEDROOM.Add(this)
   }
 });
 
@@ -1056,7 +1056,7 @@ murd.TOOTH_BRUSH = engine.MakeObject({
   dropIfHeld: function(world) {
     if (this.location != world.INVENTORY) { return; }
     world.Print("You set the toothbrush by the sink.");
-    murd.SINK.container.Add(this)
+    murd.SINK.Add(this)
   }
 });
 
@@ -1327,7 +1327,7 @@ murd.OFFICE_PHOTO = engine.MakeObject({
   dropIfHeld: function(world) {
     if (murd.OFFICE_PHOTO.location != world.INVENTORY) { return; }
     world.Print("You set the photo back on the desk.");
-    murd.OFFICE_DESK.container.Add(this)
+    murd.OFFICE_DESK.Add(this)
   }
 });
 
@@ -1401,10 +1401,10 @@ murd.PIZZA = engine.MakeObject({
                   + "Damn. Your vomit quickly dissolves in the mulch. "
                   + "The germs would thank you for your contribution, if only "
                   + "they could speak.");
-      murd.PIZZERIA.container.Add(murd.PIZZA);
+      murd.PIZZERIA.Add(murd.PIZZA);
       murd.PIZZERIA.pizzaPaid = false;  // Needs to pay again.
       murd.PIZZERIA_RESTROOM.thrownUp = true;
-      murd.PIZZERIA_RESTROOM.container.Add(murd.PIZZERIA_VOMIT);
+      murd.PIZZERIA_RESTROOM.Add(murd.PIZZERIA_VOMIT);
       return;
     }
 
