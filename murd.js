@@ -24,12 +24,18 @@ function isShowerCommand(verb, words) {
       || ((verb == "use" || verb == "take") && words[0] == "shower");
 }
 
-function linkToRoom(room) {
-  if (!room.visited) {
-    return room.TITLE;
+// Returns `text`. If showLink is true, shows it with a link that, when clicked,
+// performs action.
+function linkToAction(showLink, action, text) {
+  if (!showLink) {
+    return text;
   }
-  return "<a href='javascript:eng.ProcessAction(&quot;go " + room.NAME
-         + "&quot;);'>" + room.TITLE + "</a>";
+  return "<a href='javascript:eng.ProcessAction(&quot;" + action + "&quot;);'>"
+         + text + "</a>";
+}
+
+function linkToRoom(room) {
+  return linkToAction(room.visited, "go " + room.NAME, room.TITLE);
 }
 
 murd.BEDROOM = engine.MakeRoom({
@@ -522,12 +528,16 @@ murd.BANK_LIFT = engine.MakeRoom({
   TITLE: "the lift",
   Init: function() {
     this.floor = 0;
+    this.floorsVisited = { 0: true, };
   },
   Description: function(world) {
     return "You're surrounded by the three walls of steel in the lift. "
            + "The open doors are facing "
            + murd.BankFloorsDescriptions[this.floor](world)
-           + ". There are three buttons here: 0, 1, 2.";
+           + ". There are three buttons here: "
+           + linkToAction(0 in this.floorsVisited, "use 0", "0") + ", "
+           + linkToAction(1 in this.floorsVisited, "use 1", "1") + ", and "
+           + linkToAction(2 in this.floorsVisited, "use 2", "2") + ".";
   },
   HandleAction: function(world, verb, words) {
     if ((verb == "use" || verb == "press")
@@ -1170,6 +1180,7 @@ function MakeLiftButton(data) {
           + murd.BankFloorsDescriptions[data.floor](world)
           + ".");
       murd.BANK_LIFT.floor = data.floor;
+      murd.BANK_LIFT.floorsVisited[data.floor] = true;;
     },
     CanGet: function(world) {
       world.Print("It's attached to the panel.");
