@@ -44,16 +44,19 @@ murd.DREAM = engine.MakeRoom({
   ALIASES: ["space"],
   Init: function() {
     this.playerAlive = true;
+    this.actionsCounter = 0;
   },
   Description: function(world) {
-    return "There's a big monster with giant digital numbers in its forehead. "
-           + "It's crying loudly as it runs towards you!";
+    return "You are standing in an open field west of a white house, with a "
+        + "boarded front door. There is a small mailbox here.<br>"
+        + "A big monster with giant digital numbers in its forehead is running "
+        + "towards you!";
   },
   DescribeContents: function(world, objects) {
     var out = [];
     for (var i in objects) {
       var obj = objects[i];
-      if (obj == murd.DREAM_MONSTER) {
+      if (obj.skipContents) {
         continue;  // Already explicitly mentioned.
       }
       out.push(obj)
@@ -61,11 +64,32 @@ murd.DREAM = engine.MakeRoom({
     return out;
   },
   HandleAction: function(world, verb, words) {
+    if (murd.DREAM_MONSTER.location != this) {
+      world.Print(
+          (verb == "no" || verb == "n"
+               ? "Sure. " : "There's no time for instructions: ")
+          + "A big red monster with "
+          + "big red digital numbers in its forehead appears and starts "
+          + "chasing you! As it chases you, it starts growling an electric "
+          + "cry, the fuel of headaches.");
+      this.Add(murd.DREAM_MONSTER);
+      return true;
+    }
+    if (this.actionsCounter++ % 2 == 0) {
+      world.Print("The "
+          + pickRandomMessage(["", "ugly ", "scary ", "angry "])
+          + "monster"
+          + pickRandomMessage([
+              "'s cry grows increasingly louder!",
+              " is closing in!",
+              " is rushing towards you!"]));
+    }
     if (verb == "run") {
       world.Print("You try to get away but the monster catches up with you and "
                   + "eats you.");
       this.playerAlive = false;
       world.Enter(murd.BEDROOM);
+      return true;
     }
     return false;
   },
@@ -886,10 +910,96 @@ murd.PIZZERIA_RESTROOM = engine.MakeRoom({
 
 // ** Objects ******************************************************************
 
+murd.DREAM_FIELD = engine.MakeObject({
+  NAME: "field",
+  TITLE: "an open field",
+  INITIAL_LOCATION: murd.DREAM,
+  skipContents: true,
+  Use: function(world, onWhat) {
+    world.Print("You try to escape through the field but the monster catches "
+        + "up with you and eats you.");
+    murd.DREAM.playerAlive = false;
+    world.Enter(murd.BEDROOM);
+  },
+  CanGet: function(world) {
+    world.Print("That makes no sense.");
+    return false;
+  }
+});
+
+murd.DREAM_HOUSE = engine.MakeObject({
+  NAME: "house",
+  TITLE: "a white house",
+  INITIAL_LOCATION: murd.DREAM,
+  skipContents: true,
+  Detail: function(world) {
+    return "It looks very unremarkable. It has a boarded front door.";
+  },
+
+  Use: function(world, onWhat) {
+    world.Print(
+        "You try to hide behind the house but the monster sees you! "
+         + "It chases you around the house.");
+  },
+  DescribeContents: function(world, objects) {
+    return [];
+  },
+  CanGet: function(world) {
+    world.Print("It's fixed to the ground.");
+    return false;
+  }
+});
+
+murd.DREAM_DOOR = engine.MakeObject({
+  NAME: "door",
+  TITLE: "a boarded front door",
+  INITIAL_LOCATION: murd.DREAM_HOUSE,
+  Use: function(world, onWhat) {
+    world.Print("You try to "
+        + pickRandomMessage([
+              "push the door open", "open the door", "kick the door open"])
+        + " but it won't move.");
+  },
+  CanGet: function(world) {
+    world.Print("The door won't move.");
+    return false;
+  }
+});
+
+murd.DREAM_MAILBOX = engine.MakeObject({
+  NAME: "mailbox",
+  TITLE: "a small mailbox",
+  INITIAL_LOCATION: murd.DREAM,
+  skipContents: true,
+  Detail: function(world) {
+    var description = "There is a small mailbox here."
+    if (murd.DREAM_SPOON.location == this) {
+      description += " It contains a small spoon.";
+    }
+    return description;
+  },
+  Use: function(world, onWhat) {
+    if (murd.DREAM_SPOON.location != murd.DREAM_MAILBOX) {
+      world.Print("You put the spoon inside the mailbox.");
+      murd.DREAM_MAILBOX.Add(murd.DREAM_SPOON);
+      return;
+    }
+    world.Print("You try to hide inside the mailbox but you don't fit. "
+        + "The monster is getting closer!");
+  },
+  DescribeContents: function(world, objects) {
+    return [];
+  },
+  CanGet: function(world) {
+    world.Print("It's fixed to the ground.");
+    return false;
+  },
+});
+
 murd.DREAM_SPOON = engine.MakeObject({
   NAME: "spoon",
   TITLE: "a completely unremarkable spoon",
-  INITIAL_LOCATION: murd.DREAM,
+  INITIAL_LOCATION: murd.DREAM_MAILBOX,
   Use: function(world, onWhat) {
     world.Print("You see no use for the spoon here.");
   },
@@ -902,11 +1012,12 @@ murd.DREAM_SPOON = engine.MakeObject({
 murd.DREAM_MONSTER = engine.MakeObject({
   NAME: "monster",
   TITLE: "a scary monster",
-  INITIAL_LOCATION: murd.DREAM,
+  INITIAL_LOCATION: murd.BEDROOM,
+  skipContents: true,
   Detail: function(world) {
-    return "It looks very scary. It has black fur and very large digital "
-           + "numbers in red on its forehead. It cries an electric buzz, "
-           + "maddening. It's chasing you! "
+    return "The monster looks very scary. It has black fur and very large "
+           + "digital numbers in red on its forehead. It cries an electric "
+           + "buzz, maddening. It's chasing you! "
            + "Running away sounds like a good idea.";
   },
   DescribeContents: function(world, objects) {
@@ -1795,9 +1906,10 @@ murd.JAIL_CRACK = engine.MakeObject({
 
 murd.Game = function() {
   this.START_LOCATION = murd.DREAM;
-  this.INTRO = "A big red monster with big red digital numbers in its forehead "
-      + "is chasing you. As it chases you, it starts growling an electric cry, "
-      + "the fuel of headaches. Its cry grows increasingly louder."
+  this.INTRO = "Welcome to Adventure!<br>"
+      + "You are standing in an open field west of a white house, with a "
+      + "boarded front door. There is a small mailbox here.<br>"
+      + "Would you like instructions?";
 };
 murd.Game.prototype = new engine.Game();
 murd.Game.prototype.InitState = function(world) {
@@ -1854,6 +1966,10 @@ murd.Game.prototype.ROOMS = [
   murd.JAIL,
 ];
 murd.Game.prototype.OBJECTS = [
+  murd.DREAM_FIELD,
+  murd.DREAM_HOUSE,
+  murd.DREAM_DOOR,
+  murd.DREAM_MAILBOX,
   murd.DREAM_SPOON,
   murd.DREAM_MONSTER,
   murd.DREAM_MONSTER_FUR,
