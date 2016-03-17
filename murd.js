@@ -38,6 +38,48 @@ function linkToRoom(room) {
   return linkToAction(room.visited, "go " + room.NAME, room.TITLE);
 }
 
+murd.DREAM = engine.MakeRoom({
+  NAME: "dream-world",
+  TITLE: "an open space",
+  ALIASES: ["space"],
+  Init: function() {
+    this.playerAlive = true;
+  },
+  Description: function(world) {
+    return "There's a big monster with giant digital numbers in its forehead. "
+           + "It's crying loudly as it runs towards you!";
+  },
+  DescribeContents: function(world, objects) {
+    var out = [];
+    for (var i in objects) {
+      var obj = objects[i];
+      if (obj == murd.DREAM_MONSTER) {
+        continue;  // Already explicitly mentioned.
+      }
+      out.push(obj)
+    }
+    return out;
+  },
+  HandleAction: function(world, verb, words) {
+    if (verb == "run") {
+      world.Print("You try to get away but the monster catches up with you and "
+                  + "eats you.");
+      this.playerAlive = false;
+      world.Enter(murd.BEDROOM);
+    }
+    return false;
+  },
+  CanLeave: function(world, toRoom) {
+    murd.DREAM_SPOON.dropIfHeld(world);
+    return true;
+  },
+  Exits: function() {
+    var output = {};
+    if (!this.playerAlive) { output["bedroom"] = true; }
+    return output;
+  }
+});
+
 murd.BEDROOM = engine.MakeRoom({
   NAME: "bedroom",
   TITLE: "your bedroom",
@@ -88,6 +130,10 @@ murd.BEDROOM = engine.MakeRoom({
   CanEnter: function(world) {
     if (world.location == murd.BRUPBACHERPLATZ) {
       world.Print("You climb up the stairs to your apartment.");
+    }
+    if (world.location == murd.DREAM) {
+      world.Print("You wake up startled. It was just a dream.<br>"
+                  + "You breath deeply.");
     }
     return true;
   },
@@ -839,6 +885,106 @@ murd.PIZZERIA_RESTROOM = engine.MakeRoom({
 });
 
 // ** Objects ******************************************************************
+
+murd.DREAM_SPOON = engine.MakeObject({
+  NAME: "spoon",
+  TITLE: "a completely unremarkable spoon",
+  INITIAL_LOCATION: murd.DREAM,
+  Use: function(world, onWhat) {
+    world.Print("You see no use for the spoon here.");
+  },
+  dropIfHeld: function(world) {
+    if (this.location != world.INVENTORY) { return; }
+    murd.DREAM.Add(this)
+  }
+});
+
+murd.DREAM_MONSTER = engine.MakeObject({
+  NAME: "monster",
+  TITLE: "a scary monster",
+  INITIAL_LOCATION: murd.DREAM,
+  Detail: function(world) {
+    return "It looks very scary. It has black fur and very large digital "
+           + "numbers in red on its forehead. It cries an electric buzz, "
+           + "maddening. It's chasing you! "
+           + "Running away sounds like a good idea.";
+  },
+  DescribeContents: function(world, objects) {
+    return [];
+  },
+  Use: function(world, onWhat) {
+    world.Print("You approach the monster and, before you have time to think "
+                + "it better, the scary monster... eats you whole.");
+    murd.DREAM.playerAlive = false;
+    world.Enter(murd.BEDROOM);
+  },
+  CanGet: function(world) {
+    world.Print(pickRandomMessage([
+        "No way I'm touching it!",
+        "No, I fear it would eat me!",
+        "I'm not getting close to it, it looks very scary."]));
+    return false;
+  },
+});
+
+murd.DREAM_MONSTER_FUR = engine.MakeObject({
+  NAME: "fur",
+  TITLE: "the fur of the scary monster",
+  INITIAL_LOCATION: murd.DREAM_MONSTER,
+  Detail: function(world) {
+    return "The monster has a thick black fur, dark as shadows. This monster "
+           + "must have come from another world.";
+  },
+  Use: function(world, onWhat) {
+    world.Print("It's attached to the monster. You're to scared to get close "
+                + "to it.");
+  },
+  CanGet: function(world) {
+    world.Print("No way you're getting closer to that ugly monster!");
+    return false;
+  }
+});
+
+murd.DREAM_MONSTER_FOREHEAD = engine.MakeObject({
+  NAME: "forehead",
+  TITLE: "the forehead of the monster",
+  INITIAL_LOCATION: murd.DREAM_MONSTER,
+  Detail: function(world) {
+    return "The monster has a huge forehead. It has some red numbers written "
+           + "on it.";
+  },
+  DescribeContents: function(world, objects) {
+    return [];
+  },
+  Use: function(world, onWhat) {
+    world.Print("That makes no sense. What would you use the monster's "
+                + "forehead for?");
+  },
+  CanGet: function(world) {
+    world.Print(pickRandomMessage([
+        "I'm not touching his forehead!",
+        "I'm too scared of it to get any closer.",
+        ]));
+    return false;
+  },
+});
+
+murd.DREAM_MONSTER_FOREHEAD_NUMBERS = engine.MakeObject({
+  NAME: "numbers",
+  TITLE: "numbers of the forehead of the monster",
+  INITIAL_LOCATION: murd.DREAM_MONSTER_FOREHEAD,
+  Detail: function(world) {
+    return "The red numbers in the monster's forehead become blurry as you try "
+           + "to read them.";
+  },
+  Use: function(world, onWhat) {
+    world.Print("What for?");
+  },
+  CanGet: function(world) {
+    world.Print("They're attached to the monster's forehead.");
+    return false;
+  },
+});
 
 murd.NIGHTSTAND = engine.MakeObject({
   NAME: "nightstand",
@@ -1648,8 +1794,10 @@ murd.JAIL_CRACK = engine.MakeObject({
 });
 
 murd.Game = function() {
-  this.START_LOCATION = murd.BEDROOM;
-  this.INTRO = "The game is afoot.<br>You are in your bedroom."
+  this.START_LOCATION = murd.DREAM;
+  this.INTRO = "A big red monster with big red digital numbers in its forehead "
+      + "is chasing you. As it chases you, it starts growling an electric cry, "
+      + "the fuel of headaches. Its cry grows increasingly louder."
 };
 murd.Game.prototype = new engine.Game();
 murd.Game.prototype.InitState = function(world) {
@@ -1686,6 +1834,7 @@ murd.Game.prototype.HandleAction = function(world, verb, words) {
 };
 
 murd.Game.prototype.ROOMS = [
+  murd.DREAM,
   murd.BEDROOM,
   murd.RESTROOM,
   murd.BRUPBACHERPLATZ,
@@ -1705,6 +1854,12 @@ murd.Game.prototype.ROOMS = [
   murd.JAIL,
 ];
 murd.Game.prototype.OBJECTS = [
+  murd.DREAM_SPOON,
+  murd.DREAM_MONSTER,
+  murd.DREAM_MONSTER_FUR,
+  murd.DREAM_MONSTER_FOREHEAD,
+  murd.DREAM_MONSTER_FOREHEAD_NUMBERS,
+
   murd.NIGHTSTAND,
   murd.ALARM_CLOCK,
   murd.BED,
