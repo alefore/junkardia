@@ -75,9 +75,9 @@ murd.DREAM = engine.MakeRoom({
       this.Add(murd.DREAM_MONSTER);
       return true;
     }
-    if (this.actionsCounter++ % 2 == 0) {
+    if (this.actionsCounter++ % 3 == 0) {
       world.Print("The "
-          + pickRandomMessage(["", "ugly ", "scary ", "angry "])
+          + pickRandomMessage(["", "ugly ", "scary ", "angry ", "evil "])
           + "monster"
           + pickRandomMessage([
               "'s cry grows increasingly louder!",
@@ -958,7 +958,9 @@ murd.DREAM_DOOR = engine.MakeObject({
     world.Print("You try to "
         + pickRandomMessage([
               "push the door open", "open the door", "kick the door open"])
-        + " but it won't move.");
+        + " but it won't "
+        + pickRandomMessage(["move", "budge"])
+        + ".");
   },
   CanGet: function(world) {
     world.Print("The door won't move.");
