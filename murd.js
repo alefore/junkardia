@@ -575,6 +575,10 @@ murd.BankFloorsDescriptions = [
       return "a small cafe";
     },
     function (world) {
+      return "the hall leading to " + linkToRoom(murd.BANK_2_OFFICE)
+          + " and to " + linkToRoom(murd.BANK_2_TOILET);
+    },
+    function (world) {
       return "the hall leading to " + linkToRoom(murd.OFFICE) + " and to "
              + linkToRoom(murd.BANK_TOILET);
     },
@@ -585,6 +589,7 @@ function dispatchBankLiftButton(world, button) {
     0: murd.BANK_LIFT_BUTTON_0,
     1: murd.BANK_LIFT_BUTTON_1,
     2: murd.BANK_LIFT_BUTTON_2,
+    3: murd.BANK_LIFT_BUTTON_2,
   }
   if (button in buttons) {
     buttons[button].Use(world, null);
@@ -606,8 +611,9 @@ murd.BANK_LIFT = engine.MakeRoom({
            + murd.BankFloorsDescriptions[this.floor](world)
            + ". There are three buttons here: "
            + linkToAction(0 in this.floorsVisited, "use 0", "0") + ", "
-           + linkToAction(1 in this.floorsVisited, "use 1", "1") + ", and "
-           + linkToAction(2 in this.floorsVisited, "use 2", "2") + ".";
+           + linkToAction(1 in this.floorsVisited, "use 1", "1") + ", "
+           + linkToAction(2 in this.floorsVisited, "use 2", "2") + ", and "
+           + linkToAction(3 in this.floorsVisited, "use 3", "3") + ".";
   },
   HandleAction: function(world, verb, words) {
     if ((verb == "use" || verb == "press")
@@ -635,10 +641,12 @@ murd.BANK_LIFT = engine.MakeRoom({
     if (this.floor == 0) {
       output["reception"] = true;
     } else if (this.floor == 1) {
-      // TODO.
     } else if (this.floor == 2) {
-      output["office"] = true;
-      output["toilet"] = true;
+      output["bank-2-office"] = true;
+      output["bank-2-toilet"] = true;
+    } else if (this.floor == 3) {
+      output["bank-3-office"] = true;
+      output["bank-3-toilet"] = true;
     }
     return output;
   },
@@ -648,7 +656,9 @@ murd.BANK_LIFT = engine.MakeRoom({
       var obj = objects[i];
       if (obj == murd.BANK_LIFT_BUTTON_0
           || obj == murd.BANK_LIFT_BUTTON_1
-          || obj == murd.BANK_LIFT_BUTTON_2) {
+          || obj == murd.BANK_LIFT_BUTTON_2
+          || obj == murd.BANK_LIFT_BUTTON_3
+          || obj == murd.BANK_LIFT_BUTTON_4) {
         continue;  // They're already in the description.
       }
       out.push(obj)
@@ -687,17 +697,83 @@ function CanLeaveOfficeFloor(world, toRoom) {
         + " down but it appears to be out of service. "
         + "Ugh, you'll have to take the stairs.<br>"
         + "As you're walking down, you stumble and nearly fall as you find "
-        + "the <b>murder scene</b>! The body of your colleague Micha is "
-        + "laying on the ground, between floors 3 and 4!<br>"
+        + "the <b>murder scene</b>! The body of your coworker Micha is "
+        + "laying on the ground, between floors 2 and 1!<br>"
         + "Welcome to Micha's Murder Mistery!<br>"
         + "<h1>You've won.</h1>");
   }
   return true;
 }
 
+murd.BANK_2_OFFICE = engine.MakeRoom({
+  NAME: "bank-2-office",
+  TITLE: "your coworker's office",
+  ALIASES: ["office"],
+  Description: function(world) {
+    var description = "You are in the office of your coworker. ";
+    if (murd.COWORKER.location == murd.BANK_2_OFFICE) {
+      description += "He's sitting on his computer, working.";
+    } else {
+      description += "He's nowhere to be seen.";
+    }
+    description +=
+        " From here you can walk back to "
+        + linkToRoom(murd.BANK_LIFT) + " or go to "
+        + linkToRoom(murd.BANK_2_TOILET) + ".";
+    return description;
+  },
+  DescribeContents: function(world, objects) {
+    var out = []
+    for (var i in objects) {
+      var obj = objects[i];
+      if (obj == murd.COWORKER) {
+        continue;  // Already in the description.
+      }
+      out.push(obj)
+    }
+    return out;
+  },
+  Update: function(world) {
+    if (murd.OFFICE.timeWorking == 1) {
+      murd.PIZZERIA.Add(murd.COWORKER);
+    } else {
+      murd.BANK_2_OFFICE.Add(murd.COWORKER);
+    }
+  },
+  Exits: function(world) {
+    return {"lift": true, "bank-2-toilet": true};
+  }
+});
+
+murd.BANK_2_TOILET = engine.MakeRoom({
+  NAME: "bank-2-toilet",
+  TITLE: "a small toilet",
+  ALIASES: ["toilet"],
+  Description: function(world) {
+    return "A smallish office toilet. It's relatively clean.";
+  },
+  CanEnter: function(world) {
+    if (murd.OFFICE.timeWorking == 1
+        && world.GetFlag(murd.flags.foodEaten) == 1
+        && !world.GetFlag(murd.flags.hasCleanHands)) {
+      world.Print(
+          "There's a sign by the door that reads 'Under Maintenance.' "
+          + "You try to enter but a woman gives you a stern look. "
+          + "'Sorry, sir, I'm cleaning this place; please go somewhere else.' "
+          + "You go back.");
+      return false;
+    }
+    return true;
+  },
+  Exits: function(world) {
+    return {"lift": true, "bank-2-office": true};
+  }
+});
+
 murd.OFFICE = engine.MakeRoom({
-  NAME: "office",
-  TITLE: "the office",
+  NAME: "bank-3-office",
+  TITLE: "your office",
+  ALIASES: ["office"],
   Init: function() {
     this.sitting = false;
     this.timeWorking = 0;
@@ -763,12 +839,12 @@ murd.OFFICE = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"lift": true, "toilet": true};
+    return {"lift": true, "bank-3-toilet": true};
   }
 });
 
 murd.BANK_TOILET = engine.MakeRoom({
-  NAME: "toilet",
+  NAME: "bank-3-toilet",
   TITLE: "a small toilet",
   Description: function(world) {
     return "You're in a standard, if a bit small, office toilet. It has "
@@ -789,7 +865,7 @@ murd.BANK_TOILET = engine.MakeRoom({
   },
   CanLeave: CanLeaveOfficeFloor,
   Exits: function(world) {
-    return {"lift": true, "office": true};
+    return {"lift": true, "bank-3-office": true};
   },
 });
 
@@ -845,8 +921,23 @@ murd.PIZZERIA = engine.MakeRoom({
            + linkToRoom(murd.TESSINERPLATZ)
            + ", is the place where you usually have lunch. "
            + "The pizza is mediocre but the prices are affordable for Zurich. "
-           + "A bunch of people are having lunch here. There's "
-           + linkToRoom(murd.PIZZERIA_RESTROOM) + " in the back.";
+           + "A bunch of people are having lunch here"
+           + (murd.COWORKER.location == murd.PIZZERIA
+                  ? ", including your coworker Micha"
+                  : "")
+           + ". There's " + linkToRoom(murd.PIZZERIA_RESTROOM)
+           + " in the back.";
+  },
+  DescribeContents: function(world, objects) {
+    var out = []
+    for (var i in objects) {
+      var obj = objects[i];
+      if (obj == murd.COWORKER) {
+        continue;  // Already explicitly mentioned.
+      }
+      out.push(obj)
+    }
+    return out;
   },
   CanEnter: function(world) {
     if (murd.OFFICE.timeWorking == 0) {
@@ -1451,6 +1542,43 @@ function MakeLiftButton(data) {
 murd.BANK_LIFT_BUTTON_0 = MakeLiftButton({ floor: 0 });
 murd.BANK_LIFT_BUTTON_1 = MakeLiftButton({ floor: 1 });
 murd.BANK_LIFT_BUTTON_2 = MakeLiftButton({ floor: 2 });
+murd.BANK_LIFT_BUTTON_3 = MakeLiftButton({ floor: 3 });
+
+murd.COWORKER = engine.MakeObject({
+  NAME: "coworker",
+  TITLE: "your coworker",
+  INITIAL_LOCATION: murd.BANK_2_OFFICE,
+  ALIASES: ["coworker", "micha", "colleage"],
+  Detail: function(world) {
+    var description = "Your coworker, Micha, is dressed very sharply. ";
+    if (this.location == murd.BANK_2_OFFICE) {
+      description += "He appears to be very focused on his work.";
+    } else if (this.location == murd.PIZZERIA) {
+      description += "He's enjoying a slice of pizza.";
+    }
+    return description;
+  },
+  Use: function(world, onWhat) {
+    if (this.location == murd.BANK_2_OFFICE) {
+      world.Print(
+          "He has no time to do your work; he's busy enough with his own.");
+    } else if (this.location == murd.PIZZERIA) {
+      world.Print("He looks at you. 'What? Buy your own pizza!' he says.");
+    } else {
+      world.Print("You have no use for him.");
+    }
+  },
+  CanGet: function(world) {
+    world.Print("He looks at you and shakes his head. "
+        + pickRandomMessage(["Uh, no, thanks.", "He politely declines."]));
+    return false;
+  },
+});
+
+function notifyTimePass(world) {
+  murd.OFFICE.timeWorking++;
+  murd.BANK_2_OFFICE.Update(world);
+}
 
 murd.COMPUTER = engine.MakeObject({
   NAME: "computer",
@@ -1469,7 +1597,7 @@ murd.COMPUTER = engine.MakeObject({
       return;
     }
     if (murd.OFFICE.timeWorking == 0) {
-      murd.OFFICE.timeWorking++;
+      notifyTimePass(world);
       var description;
       if (murd.OFFICE.sitting) {
         description = "You boot your old computer.";
@@ -1501,7 +1629,7 @@ murd.COMPUTER = engine.MakeObject({
         return;
       }
 
-      murd.OFFICE.timeWorking++;
+      notifyTimePass(world);
       var description;
       if (murd.OFFICE.sitting) {
         description = "You start working on your spreadsheets again.";
@@ -1521,7 +1649,7 @@ murd.COMPUTER = engine.MakeObject({
 
     if (murd.OFFICE.timeWorking == 2) {
       murd.OFFICE.sitting = true;
-      murd.OFFICE.timeWorking++;
+      notifyTimePass(world);
       world.Print(
           "You continue to work on your spreadsheet. The night falls upon "
           + "you.<br>"
@@ -1678,16 +1806,33 @@ murd.PIZZA = engine.MakeObject({
       return;
     }
 
+    var description = "";
+
+    // Move the coworker back to his office.
+    murd.BANK_2_OFFICE.Add(murd.COWORKER);
+    if (world.location == murd.PIZZERIA) {
+      description +=
+          "While you're eating, your coworker stands up and leaves.<br>";
+    } else if (world.location == murd.BANK_OFFICE_2) {
+      description +=
+          "While you're eating, your coworker arrives, gives you a weird "
+          + "look, and starts working.<br>";
+    } else if (world.location == murd.TESSINERPLATZ
+               || world.location == murd.BANK_RECEPTION) {
+      description += "Your coworker walks by while you're eating.<br>";
+    }
+
     world.SetFlag(murd.flags.foodEaten,
                   world.GetFlag(murd.flags.foodEaten) + 1);
     world.Destroy(this);
-    var description =
+    description +=
         "You eat the slice of pizza. It's not the best you've eaten, but it "
         + "certainly calms your appetite.";
     if (world.GetFlag(murd.flags.hasCleanHands)) {
       world.SetFlag(murd.flags.hasCleanHands, false);
       description += " Ugh, your hands are now very greasy.";
     }
+
     world.Print(description);
   },
   CanGet: function(world) {
@@ -1963,6 +2108,8 @@ murd.Game.prototype.ROOMS = [
   murd.PIZZERIA_RESTROOM,
   murd.BANK_RECEPTION,
   murd.BANK_LIFT,
+  murd.BANK_2_OFFICE,
+  murd.BANK_2_TOILET,
   murd.OFFICE,
   murd.BANK_TOILET,
   murd.JAIL,
@@ -1998,6 +2145,9 @@ murd.Game.prototype.OBJECTS = [
   murd.BANK_LIFT_BUTTON_0,
   murd.BANK_LIFT_BUTTON_1,
   murd.BANK_LIFT_BUTTON_2,
+  murd.BANK_LIFT_BUTTON_3,
+
+  murd.COWORKER,
 
   murd.COMPUTER,
   murd.OFFICE_CHAIR,
