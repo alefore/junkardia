@@ -1310,9 +1310,10 @@ murd.ALARM_CLOCK = engine.MakeObject({
 });
 
 murd.BED = engine.MakeObject({
-  NAME: "bed",
+  NAME: "bedroom-bed",
   TITLE: "a comfortable bed",
   INITIAL_LOCATION: murd.BEDROOM,
+  ALIASES: ["bed",],
   Use: function(world, onWhat) {
     world.Print("It's not time to sleep! You have to go to work.");
   },
@@ -2038,9 +2039,10 @@ murd.PIZZERIA_VOMIT = engine.MakeObject({
 });
 
 murd.JAIL_BED = engine.MakeObject({
-  NAME: "bed",
+  NAME: "bedroom-bed",
   TITLE: "a crappy bed",
   INITIAL_LOCATION: murd.JAIL,
+  ALIASES: ["bed",],
   Use: function(world, onWhat) {
     world.Print(pickRandomMessage([
         "You lay down on the bed and fail to fall asleep.",
