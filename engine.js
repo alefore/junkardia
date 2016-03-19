@@ -32,7 +32,8 @@ engine.World.prototype.Init = function(game) {
     loc.Add(obj);
   }
 
-  this.Print(game.INTRO);
+  this.Print('<div class="msg"><article class="reply">' +
+      game.INTRO + '</article></div>', true);
 };
 
 engine._FindWord
@@ -131,8 +132,8 @@ engine.World.prototype.LocateObject = function(words) {
   return null;
 };
 
-engine.World.prototype.Print = function(line) {
-  this.engine.Print(line);
+engine.World.prototype.Print = function(line, opt_stay) {
+  this.engine.Print(line, opt_stay);
 };
 
 engine.World.prototype.Get = function(obj) {
@@ -322,9 +323,11 @@ engine.INVENTORY = 'INVENTORY';
 
 engine.Engine.prototype.Start = function(game) {
   this.screen_.innerHTML = '';
+  this.screenBuffer_ = '';
   this.game = game;
   this.world = new engine.World(this);
   this.world.Init(game);
+  this.Flush();
 
   this.actionHistory = [];
   this.actionIndex = -1;
@@ -332,8 +335,16 @@ engine.Engine.prototype.Start = function(game) {
   this.input_.focus();
 };
 
-engine.Engine.prototype.Print = function(line) {
-  this.screen_.innerHTML += line + '<br>';
+engine.Engine.prototype.Print = function(line, opt_stay) {
+  opt_stay = opt_stay || false;
+  var br;
+  br = opt_stay ? '': '<br>';
+  this.screenBuffer_ += line + br;
+};
+
+engine.Engine.prototype.Flush = function() {
+  this.screen_.innerHTML += this.screenBuffer_;
+  this.screenBuffer_ = '';
   this.screen_.scrollTop = this.screen_.scrollHeight;
 };
 
@@ -378,8 +389,9 @@ engine.Engine.prototype.Action = function() {
 };
 
 engine.Engine.prototype.ProcessAction = function(action) {
-  this.Print('');
-  this.Print("<span class='command'>> " + action + "</span>");
+  this.Print('<div class="msg"><article class="command">'
+      + action + '</article></div>', true);
+  this.Print('<div class="msg"><article class="reply">', true);
   var words = action.toLowerCase().split(/\s+/);
   var verb = words.shift();
   var handled = this.game.HandleAction(this.world, verb, words);
@@ -389,6 +401,8 @@ engine.Engine.prototype.ProcessAction = function(action) {
   if (!handled) {
     this.game.UnknownAction(this.world, action);
   }
+  this.Print('</article></div>', true);
+  this.Flush();
   if (this.actionHistory[this.actionHistory.length - 1] != action) {
     this.actionHistory.push(action);
   }

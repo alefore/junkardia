@@ -1,19 +1,59 @@
+* {
+  font-family: helvetica;
+  box-sizing: border-box;
+  font-size: 1em;
+}
+html, body {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  display: flex;
+  flex-flow: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+#main {
+  background: #eee;
+  display: flex;
+  flex-flow: column;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 1px solid black;
+  max-width: 700px;
+  max-height: 700px;
+}
 #screen {
-  width: 700px;
-  height: 700px;
-  border: 1px solid black;
-  overflow: scroll;
+  overflow-y: scroll;
+  width: 100%;
+  flex: 1;
+  padding: 0;
+  margin: 0;
+  border: 0;
 }
-
 #input {
-  width: 700px;
-  border: 1px solid black;
+  width: 100%
+  padding: 5px;
 }
-
 #inputbox {
-  width: 696px;
+  width: 100%;
 }
-
+div.msg {
+  padding: 5px 2px;
+}
+article {
+  border: solid 1px #ccc;
+  padding: 7px;
+  border-radius: 5px;
+  width: 80%;
+  box-shadow: 3px 3px 10px -3px black;
+}
 .command {
-  color: #aaa;
+  background: #dfc;
+  margin-left: 20%;
+}
+.reply {
+  background: white;
 }
