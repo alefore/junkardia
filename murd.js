@@ -101,6 +101,7 @@ murd.DREAM = engine.MakeRoom({
   },
   CanLeave: function(world, toRoom) {
     murd.DREAM_SPOON.dropIfHeld(world);
+    murd.DREAM_POSTCARD.dropIfHeld(world);
     return true;
   },
   Exits: function() {
@@ -1098,15 +1099,20 @@ murd.DREAM_MAILBOX = engine.MakeObject({
   skipContents: true,
   Detail: function(world) {
     var description = "There is a small mailbox here."
-    if (murd.DREAM_SPOON.location == this) {
+    if (murd.DREAM_SPOON.location == this
+        && murd.DREAM_POSTCARD.location == this) {
+      description += " It contains a postcard and a small spoon.";
+    } else if (murd.DREAM_SPOON.location == this) {
       description += " It contains a small spoon.";
+    } else if (murd.DREAM_POSTCARD.location == this) {
+      description += " It contains a postcard.";
     }
     return description;
   },
   Use: function(world, onWhat) {
-    if (murd.DREAM_SPOON.location != murd.DREAM_MAILBOX) {
-      world.Print("You put the spoon inside the mailbox.");
-      murd.DREAM_MAILBOX.Add(murd.DREAM_SPOON);
+    if (murd.DREAM_POSTCARD.location != murd.DREAM_MAILBOX) {
+      world.Print("You put the postcard inside the mailbox.");
+      murd.DREAM_MAILBOX.Add(murd.DREAM_POSTCARD);
       return;
     }
     world.Print("You try to hide inside the mailbox but you don't fit. "
@@ -1127,6 +1133,40 @@ murd.DREAM_SPOON = engine.MakeObject({
   INITIAL_LOCATION: murd.DREAM_MAILBOX,
   Use: function(world, onWhat) {
     world.Print("You see no use for the spoon here.");
+  },
+  dropIfHeld: function(world) {
+    if (this.location != world.INVENTORY) { return; }
+    murd.DREAM.Add(this)
+  }
+});
+
+murd.DREAM_POSTCARD = engine.MakeObject({
+  NAME: "postcard",
+  TITLE: "a surreal postcard",
+  INITIAL_LOCATION: murd.DREAM_MAILBOX,
+  Detail: function(world) {
+    return "The postcard has an image of an animal:<pre>"
+        + "            .-9 9 `\\\n"
+        + "          =(:(::)=  ;\n"
+        + "            ||||     \\\n"
+        + "            ||||      `-.\n"
+        + "           ,\\|\\|         `,\n"
+        + "          /                \\\n"
+        + "         ;                  `'---.,\n"
+        + "         |                         `\\\n"
+        + "         ;                     /     |\n"
+        + "         \\                    |      /\n"
+        + "          )           \\  __,.--\\    /\n"
+        + "       .-' \\,..._\\     \\`   .-'  .-'\n"
+        + "      `-=``      `:    |   /-/-/`\n"
+        + "                   `.__/</pre>"
+        + "You flip it. On the back, it reads '"
+        + "<i>I am he as you are he as you are me and we are all "
+        + "together</i>.'";
+  },
+  Use: function(world, onWhat) {
+    world.Print("No time to look at it and daydream, the scary monster is "
+                + "closing in!");
   },
   dropIfHeld: function(world) {
     if (this.location != world.INVENTORY) { return; }
@@ -2153,6 +2193,7 @@ murd.Game.prototype.OBJECTS = [
   murd.DREAM_DOOR,
   murd.DREAM_MAILBOX,
   murd.DREAM_SPOON,
+  murd.DREAM_POSTCARD,
   murd.DREAM_MONSTER,
   murd.DREAM_MONSTER_FUR,
   murd.DREAM_MONSTER_FOREHEAD,
