@@ -1453,8 +1453,9 @@ murd.TESSINERPLATZ_FOUNTAIN = engine.MakeObject({
 });
 
 murd.TESSINERPLATZ_TREE = engine.MakeObject({
-  NAME: "tree",
+  NAME: "tessinerplatz-tree",
   TITLE: "a tree",
+  ALIASES: ["tree",],
   INITIAL_LOCATION: murd.TESSINERPLATZ,
   Detail: function(world) {
     return "A nice flush tree, not very tall. It provides some shade."
