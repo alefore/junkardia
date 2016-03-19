@@ -589,7 +589,7 @@ function dispatchBankLiftButton(world, button) {
     0: murd.BANK_LIFT_BUTTON_0,
     1: murd.BANK_LIFT_BUTTON_1,
     2: murd.BANK_LIFT_BUTTON_2,
-    3: murd.BANK_LIFT_BUTTON_2,
+    3: murd.BANK_LIFT_BUTTON_3,
   }
   if (button in buttons) {
     buttons[button].Use(world, null);
