@@ -1147,7 +1147,7 @@ murd.DREAM_POSTCARD = engine.MakeObject({
   TITLE: "a surreal postcard",
   INITIAL_LOCATION: murd.DREAM_MAILBOX,
   Detail: function(world) {
-    return "The postcard has an image of an animal:<pre>"
+    return "The postcard has an image of an unusual creature:<pre>"
         + "            .-9 9 `\\\n"
         + "          =(:(::)=  ;\n"
         + "            ||||     \\\n"
@@ -1162,7 +1162,7 @@ murd.DREAM_POSTCARD = engine.MakeObject({
         + "       .-' \\,..._\\     \\`   .-'  .-'\n"
         + "      `-=``      `:    |   /-/-/`\n"
         + "                   `.__/</pre>"
-        + "You flip it. On the back, it reads '"
+        + "A gust of wind whispers in your ear: '"
         + "<i>I am he as you are he as you are me and we are all "
         + "together</i>.'";
   },
