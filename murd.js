@@ -91,6 +91,12 @@ murd.DREAM = engine.MakeRoom({
       world.Enter(murd.BEDROOM);
       return true;
     }
+    if (verb == "check") {
+      if (words[0] == "mail" || words[0] == "mailbox") {
+        world.Print(murd.DREAM_MAILBOX.Detail(world));
+        return true;
+      }
+    }
     return false;
   },
   CanLeave: function(world, toRoom) {
@@ -359,6 +365,30 @@ function ExitsTrainLines(room, exits) {
   return exits;
 }
 
+function HandleTrainStationAction(world, verb, words) {
+  var sentence = [verb].concat(words).join(" ");
+  var pattern =
+      "^(board|get|take|ride)"
+      + "( the( mother[ -]?fucking)?)?"
+      + " (bahn|train|choo[ -]?choo|trains)";
+  var takeTheTrain = new RegExp(pattern + "$");
+  if (takeTheTrain.exec(sentence)) {
+    world.Print(pickRandomMessage([
+        "But to which station?",
+        "But what station would you like to go to?"]));
+    return true;
+  }
+
+  var takeTheTrainTo = new RegExp(pattern + " to ([a-z]+)$");
+  var result = takeTheTrainTo.exec(sentence);
+  if (result != null) {
+    world.GoAction([result[result.length - 1]]);
+    return true;
+  }
+
+  return false;
+}
+
 murd.WIEDIKON = engine.MakeRoom({
   NAME: "wiedikon",
   TITLE: "the Wiedikon train station",
@@ -374,6 +404,7 @@ murd.WIEDIKON = engine.MakeRoom({
            + "You can walk to " + linkToRoom(murd.BRUPBACHERPLATZ)
            + " from here.";
   },
+  HandleAction: HandleTrainStationAction,
   CanEnter: function(world) {
     world.Print("You enter the Wiedikon train station.");
     return true;
@@ -426,6 +457,7 @@ murd.ENGE = engine.MakeRoom({
         + DescriptionTrainLines(murd.ENGE)
         + "You can walk outside to " + linkToRoom(murd.TESSINERPLATZ) + ".";
   },
+  HandleAction: HandleTrainStationAction,
   CanEnter: function(world) {
     if (world.location == murd.WIEDIKON) {
       world.Print(
@@ -609,7 +641,7 @@ murd.BANK_LIFT = engine.MakeRoom({
     return "You're surrounded by the three walls of steel in the lift. "
            + "The open doors are facing "
            + murd.BankFloorsDescriptions[this.floor](world)
-           + ". There are three buttons here: "
+           + ". There are four buttons here: "
            + linkToAction(0 in this.floorsVisited, "use 0", "0") + ", "
            + linkToAction(1 in this.floorsVisited, "use 1", "1") + ", "
            + linkToAction(2 in this.floorsVisited, "use 2", "2") + ", and "
