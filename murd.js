@@ -125,14 +125,16 @@ murd.BEDROOM = engine.MakeRoom({
         "Your bedroom is a bit messy. There's an unmade bed and a nightstand "
         + "besides it.";
     if (this.alarmClockOn) {
-      description += " The annoying alarm clock is beeping loudly."
+      description += " Theres t... *BEEP* *BEEP* *BEEP*... "
+          + "The annoying alarm clock is beeping loudly."
+    } else {
+      description +=
+          " There's two doors here, one leads to "
+          + linkToRoom(murd.RESTROOM)
+          + " and one down to "
+          + linkToRoom(murd.BRUPBACHERPLATZ)
+          + ".";
     }
-    description +=
-        " There's two doors here, one leads to "
-        + linkToRoom(murd.RESTROOM)
-        + " and one down to "
-        + linkToRoom(murd.BRUPBACHERPLATZ)
-        + ".";
     return description;
   },
 
