@@ -51,8 +51,7 @@ murd.DREAM = engine.MakeRoom({
   Description: function(world) {
     return "You are standing in an open field west of a white house, with a "
         + "boarded front door. There is a small mailbox here.<br>"
-        + "A big monster with giant digital numbers in its forehead is running "
-        + "towards you!";
+        + "A big monster is running towards you!";
   },
   DescribeContents: function(world, objects) {
     var out = [];
@@ -70,10 +69,10 @@ murd.DREAM = engine.MakeRoom({
       world.Print(
           (parsed.verb == "no" || parsed.verb == "n"
                ? "Sure. " : "There's no time for instructions: ")
-          + "A big red monster with "
-          + "big red digital numbers in its forehead appears and starts "
-          + "chasing you! As it chases you, it starts growling an electric "
-          + "cry, the fuel of headaches.");
+          + "A big red scary monster appears and starts chasing you! "
+          + "Its head glows red. "
+          + "As it chases you, it starts growling an electric cry, the fuel of "
+          + "headaches.");
       this.Add(murd.DREAM_MONSTER);
       return true;
     }
@@ -595,7 +594,7 @@ murd.BANK_RECEPTION = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"lift": true, "tessinerplatz": true};
+    return {"lift": true, "tessinerplatz": true, "stairs-1": true};
   }
 });
 
@@ -669,6 +668,12 @@ murd.BANK_LIFT = engine.MakeRoom({
   CanEnter: function(world) {
     // Technically, the lift is already at the current floor, but pretending it
     // is arriving makes things slightly more colorful.
+    if (murd.OFFICE.timeWorking == 3) {
+      world.Print(
+          "You try to call the lift but it doesn't come; it appears to be out "
+          + "of service. Ugh, looks like you'll have to take the stairs.");
+      return false;
+    }
     world.Print("You press the button to call the lift. " + pickRandomMessage([
         "It arrives instantaneously.",
         "It takes a while but the lift finally arrives.",
@@ -731,15 +736,7 @@ function CanLeaveOfficeFloor(world, toRoom) {
     return false;
   }
   if (timeWorking == 3) {
-    world.Print(
-        "You try to take " + linkToRoom(murd.BANK_LIFT)
-        + " down but it appears to be out of service. "
-        + "Ugh, you'll have to take the stairs.<br>"
-        + "As you're walking down, you stumble and nearly fall as you find "
-        + "the <b>murder scene</b>! The body of your coworker Micha is "
-        + "laying on the ground, between floors 2 and 1!<br>"
-        + "Welcome to Micha's Murder Mistery!<br>"
-        + "<h1>You've won.</h1>");
+    return true;
   }
   return true;
 }
@@ -878,13 +875,14 @@ murd.OFFICE = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"lift": true, "bank-3-toilet": true};
+    return {"lift": true, "bank-3-toilet": true, "stairs-1": true};
   }
 });
 
 murd.BANK_TOILET = engine.MakeRoom({
   NAME: "bank-3-toilet",
   TITLE: "a small toilet",
+  ALIASES: ["toilet"],
   Description: function(world) {
     return "You're in a standard, if a bit small, office toilet. It has "
            + "gray tiles and smells of cheap soap. Jazmin.<br>"
@@ -904,8 +902,41 @@ murd.BANK_TOILET = engine.MakeRoom({
   },
   CanLeave: CanLeaveOfficeFloor,
   Exits: function(world) {
-    return {"lift": true, "bank-3-office": true};
+    return {"lift": true, "bank-3-office": true, "stairs-1": true};
   },
+});
+
+// TODO: When we support per-exit aliases, add more stairs, make the player
+// actually traverse them.
+murd.STAIRS_1 = engine.MakeRoom({
+  NAME: "stairs-1",
+  TITLE: "the stairs",
+  ALIASES: ["stairs"],
+  Description: function(world) {
+    var description = "You're in the stairs at floor 1."
+        + " From here you can go down to " + linkToRoom(murd.BANK_RECEPTION)
+        + " or up to " + linkToRoom(murd.OFFICE) + ".";
+    if (murd.OFFICE.timeWorking == 3) {
+      description +=
+          " The corpse of your coworker, Micha, is laying on the floor. Blood "
+          + "is dripping from a big wound on him.";
+    }
+    return description;
+  },
+  CanEnter: function(world) {
+    if (world.location == murd.OFFICE && murd.OFFICE.timeWorking == 3) {
+      world.Print(
+          "As you're walking down, you stumble and nearly fall as you find "
+          + "the murder scene!<br>"
+          + "The body of your coworker Micha is laying on the ground, between "
+          + "floors 2 and 1!<br>"
+          + "Welcome to Micha's Murder Mistery!");
+    }
+    return true;
+  },
+  Exits: function(world) {
+    return {"bank-3-office": true, "reception": true};
+  }
 });
 
 murd.JAIL = engine.MakeRoom({
@@ -1186,9 +1217,10 @@ murd.DREAM_MONSTER = engine.MakeObject({
   INITIAL_LOCATION: murd.BEDROOM,
   skipContents: true,
   Detail: function(world) {
-    return "The monster looks very scary. It has black fur and very large "
-           + "digital numbers in red on its forehead. It cries an electric "
-           + "buzz, maddening. It's chasing you! "
+    return "The monster looks very scary. "
+           + "It has black fur and his head glows red. "
+           + "It cries an electric buzz, maddening. "
+           + "It's chasing you! "
            + "Running away sounds like a good idea.";
   },
   DescribeContents: function(world, objects) {
@@ -1227,37 +1259,61 @@ murd.DREAM_MONSTER_FUR = engine.MakeObject({
   }
 });
 
-murd.DREAM_MONSTER_FOREHEAD = engine.MakeObject({
-  NAME: "forehead",
-  TITLE: "the forehead of the monster",
+murd.DREAM_MONSTER_HEAD = engine.MakeObject({
+  NAME: "head",
+  TITLE: "the head of the monster",
   INITIAL_LOCATION: murd.DREAM_MONSTER,
+  ALIASES: ["forehead",],
   Detail: function(world) {
-    return "The monster has a huge forehead. It has some red numbers written "
-           + "on it.";
+    return "The monster has a huge forehead, glowing red. The glow appears to "
+           + "come from some numbers written on it.";
   },
   DescribeContents: function(world, objects) {
     return [];
   },
   Use: function(world, onWhat) {
     world.Print("That makes no sense. What would you use the monster's "
-                + "forehead for?");
+                + "head for?");
   },
   CanGet: function(world) {
     world.Print(pickRandomMessage([
-        "I'm not touching his forehead!",
-        "I'm too scared of it to get any closer.",
+        "I'm not touching his head!",
+        "I'm too scared to get any closer.",
         ]));
     return false;
   },
 });
 
-murd.DREAM_MONSTER_FOREHEAD_NUMBERS = engine.MakeObject({
+murd.DREAM_MONSTER_HEAD_GLOW = engine.MakeObject({
+  NAME: "glow",
+  TITLE: "the glow on the monster's head",
+  INITIAL_LOCATION: murd.DREAM_MONSTER_HEAD,
+  Detail: function(world) {
+    return "The red glow on the monster's head appears to come from some "
+        + "numbers written on his forehead, among his black fur.";
+  },
+  DescribeContents: function(world, objects) {
+    return [];
+  },
+  Use: function(world, onWhat) {
+    world.Print("For what? Umm.");
+  },
+  CanGet: function(world) {
+    world.Print(pickRandomMessage([
+        "I'm not touching his head!",
+        "I'm too scared to get any closer.",
+        ]));
+    return false;
+  },
+});
+
+murd.DREAM_MONSTER_HEAD_NUMBERS = engine.MakeObject({
   NAME: "numbers",
   TITLE: "numbers of the forehead of the monster",
-  INITIAL_LOCATION: murd.DREAM_MONSTER_FOREHEAD,
+  INITIAL_LOCATION: murd.DREAM_MONSTER_HEAD,
   Detail: function(world) {
-    return "The red numbers in the monster's forehead become blurry as you try "
-           + "to read them.";
+    return "The red numbers in the monster's forehead look digital, somehow. "
+        + "They become blurry as you try to read them.";
   },
   Use: function(world, onWhat) {
     world.Print("What for?");
@@ -1895,7 +1951,7 @@ murd.PIZZA = engine.MakeObject({
     if (world.location == murd.PIZZERIA) {
       description +=
           "While you're eating, your coworker stands up and leaves.<br>";
-    } else if (world.location == murd.BANK_OFFICE_2) {
+    } else if (world.location == murd.BANK_2_OFFICE) {
       description +=
           "While you're eating, your coworker arrives, gives you a weird "
           + "look, and starts working.<br>";
@@ -2179,6 +2235,7 @@ murd.Game.prototype.ROOMS = [
   murd.BANK_2_OFFICE,
   murd.BANK_2_TOILET,
   murd.OFFICE,
+  murd.STAIRS_1,
   murd.BANK_TOILET,
   murd.JAIL,
 ];
@@ -2191,8 +2248,9 @@ murd.Game.prototype.OBJECTS = [
   murd.DREAM_POSTCARD,
   murd.DREAM_MONSTER,
   murd.DREAM_MONSTER_FUR,
-  murd.DREAM_MONSTER_FOREHEAD,
-  murd.DREAM_MONSTER_FOREHEAD_NUMBERS,
+  murd.DREAM_MONSTER_HEAD,
+  murd.DREAM_MONSTER_HEAD_GLOW,
+  murd.DREAM_MONSTER_HEAD_NUMBERS,
 
   murd.NIGHTSTAND,
   murd.ALARM_CLOCK,
