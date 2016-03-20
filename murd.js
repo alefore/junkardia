@@ -2179,6 +2179,7 @@ murd.MURDER_WOUND = engine.MakeObject({
   },
   CanGet: function(world) {
     world.Print("Eh, what?");
+    return false;
   }
 })
 
@@ -2198,6 +2199,13 @@ murd.MURDER_KNIFE = engine.MakeObject({
       world.Print("I have no use for the Swiss Army knife here.");
     }
   },
+  CanGet: function(world) {
+    world.Print("As you take the knife out of the wound, you hear sirens from "
+        + "the police just outside the building. Oh, shit. You should probably "
+        + "leave the building!");
+    world.Print("<h1>To be continued ...</h1>");
+    return true;
+  }
 });
 
 murd.MURDER_BLOOD = engine.MakeObject({
