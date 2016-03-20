@@ -2120,8 +2120,27 @@ murd.MURDER_CORPSE = engine.MakeObject({
   INITIAL_LOCATION: null,
   skipContents: true,
   Detail: function(world) {
-    return "The corpse of your coworker, Micha, is laying on the floor. "
-        + "It looks like there's a Swiss Army knife stuck in his back.";
+    var description =
+        "The corpse of your coworker, Micha, is laying on the floor. "
+        + "You grab his wrist and try to get a pulse, but fail. "
+        + "Looks like he's really done for.";
+    if (murd.MURDER_KNIFE.location == this) {
+      description +=
+          " There's a Swiss Army knife stuck in his back, where the blood is "
+          + "coming out.";
+    }
+    return description;
+  },
+  DescribeContents: function(world, objects) {
+    var out = [];
+    for (var i in objects) {
+      var obj = objects[i];
+      if (obj == murd.MURDER_KNIFE || obj == murd.MURDER_BLOOD) {
+        continue;  // Already explicitly mentioned.
+      }
+      out.push(obj)
+    }
+    return out;
   },
   Use: function(world, onWhat) {
     world.Print("You're not THAT hungry.");
@@ -2132,7 +2151,45 @@ murd.MURDER_CORPSE = engine.MakeObject({
   }
 });
 
-murd.MURDER_KNIFE
+murd.MURDER_KNIFE = engine.MakeObject({
+  NAME: "knife",
+  TITLE: "a Swiss Army knife",
+  ALIASES: ["swiss army knife", "pocket knife"],
+  INITIAL_LOCATION: murd.MURDER_CORPSE,
+  Detail: function(world) {
+    return "A small Swiss army knife. It's covered in Micha's blood.";
+  },
+  Use: function(world, onWhat) {
+    if (onWhat == murd.MURDER_CORPSE) {
+      world.Print("No way, why would I do that!");
+    } else {
+      world.Print("I have no use for the Swiss Army knife here.");
+    }
+  },
+});
+
+murd.MURDER_BLOOD = engine.MakeObject({
+  NAME: "blood",
+  TITLE: "Micha's blood",
+  INITIAL_LOCATION: murd.MURDER_CORPSE,
+  Detail: function(world) {
+    return "Micha's blood is still dripping out of him.";
+  },
+  Use: function(world, onWhat) {
+    if (onWhat == murd.MURDER_CORPSE) {
+      world.Print("At this point his blood is all over the floor, there's not "
+          + "much you can do.");
+    } else {
+      world.Print("You're not THAT thirsty. This is not a vampire's game.");
+    }
+  },
+  CanGet: function(world) {
+    world.Print("You can't get it; it's all over the floor now. "
+        + "Maybe if you had a sponge.");
+    return false;
+  }
+});
+
 murd.JAIL_BED = engine.MakeObject({
   NAME: "bedroom-bed",
   TITLE: "a crappy bed",
@@ -2333,6 +2390,8 @@ murd.Game.prototype.OBJECTS = [
   murd.BANK_SOAP,
 
   murd.MURDER_CORPSE,
+  murd.MURDER_KNIFE,
+  murd.MURDER_BLOOD,
 
   murd.PIZZA,
   murd.PIZZERIA_SINK,
