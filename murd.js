@@ -2066,8 +2066,9 @@ murd.PIZZERIA_GERMS = engine.MakeObject({
 });
 
 murd.PIZZERIA_FLOOR = engine.MakeObject({
-  NAME: "floor",
+  NAME: "pizzeria-floor",
   TITLE: "floor",
+  ALIASES: ["floor"],
   INITIAL_LOCATION: murd.PIZZERIA_RESTROOM,
   Detail: function(world) {
     var description =
@@ -2129,19 +2130,14 @@ murd.MURDER_CORPSE = engine.MakeObject({
     var description =
         "The corpse of your coworker, Micha, is laying on the floor. "
         + "You grab his wrist and try to get a pulse, but fail. "
-        + "Looks like he's really done for.";
-    if (murd.MURDER_KNIFE.location == this) {
-      description +=
-          " There's a Swiss Army knife stuck in his back, where the blood is "
-          + "coming out.";
-    }
+        + "Looks like he's really done for. He has a big wound on his back.";
     return description;
   },
   DescribeContents: function(world, objects) {
     var out = [];
     for (var i in objects) {
       var obj = objects[i];
-      if (obj == murd.MURDER_KNIFE || obj == murd.MURDER_BLOOD) {
+      if (obj == murd.MURDER_WOUND) {
         continue;  // Already explicitly mentioned.
       }
       out.push(obj)
@@ -2157,27 +2153,65 @@ murd.MURDER_CORPSE = engine.MakeObject({
   }
 });
 
+murd.MURDER_WOUND = engine.MakeObject({
+  NAME: "wound",
+  INITIAL_LOCATION: murd.MURDER_CORPSE,
+  Detail: function(world) {
+    return "The corpse has a big wound in his back. "
+        + "Blood is still coming out of it."
+        + (murd.MURDER_KNIFE.location == this
+               ? " A small Swiss Army knife is stuck in it."
+               : "");
+  },
+  DescribeContents: function(world, objects) {
+    var out = [];
+    for (var i in objects) {
+      var obj = objects[i];
+      if (obj == murd.MURDER_KNIFE || obj == murd.MURDER_BLOOD) {
+        continue;  // Already explicitly mentioned.
+      }
+      out.push(obj)
+    }
+    return out;
+  },
+  Use: function(world, onWhat) {
+    world.Print("For what?");
+  },
+  CanGet: function(world) {
+    world.Print("Eh, what?");
+    return false;
+  }
+})
+
 murd.MURDER_KNIFE = engine.MakeObject({
   NAME: "knife",
   TITLE: "a Swiss Army knife",
   ALIASES: ["swiss army knife", "pocket knife"],
-  INITIAL_LOCATION: murd.MURDER_CORPSE,
+  INITIAL_LOCATION: murd.MURDER_WOUND,
   Detail: function(world) {
     return "A small Swiss army knife. It's covered in Micha's blood.";
   },
   Use: function(world, onWhat) {
-    if (onWhat == murd.MURDER_CORPSE) {
+    if (onWhat == murd.MURDER_CORPSE
+        || onWhat == murd.MURDER_WOUND) {
       world.Print("No way, why would I do that!");
     } else {
       world.Print("I have no use for the Swiss Army knife here.");
     }
   },
+  CanGet: function(world) {
+    world.Print("As you take the knife out of the wound, you hear sirens from "
+        + "the police just outside the building. Oh, shit. You should probably "
+        + "leave the building!");
+    world.Print("<h1>To be continued ...</h1>");
+    return true;
+  }
 });
 
 murd.MURDER_BLOOD = engine.MakeObject({
   NAME: "blood",
   TITLE: "Micha's blood",
-  INITIAL_LOCATION: murd.MURDER_CORPSE,
+  INITIAL_LOCATION: murd.MURDER_WOUND,
   Detail: function(world) {
     return "Micha's blood is still dripping out of him.";
   },
@@ -2193,6 +2227,25 @@ murd.MURDER_BLOOD = engine.MakeObject({
     world.Print("You can't get it; it's all over the floor now. "
         + "Maybe if you had a sponge.");
     return false;
+  }
+});
+
+murd.MURDER_FLOOR = engine.MakeObject({
+  NAME: "stairs-1-floor",
+  TITLE: "the floor",
+  ALIASES: ["ground", "floor"],
+  INITIAL_LOCATION: murd.STAIRS_1,
+  skipContents: true,
+  Detail: function(world) {
+    return "The floor is mostly clean... that is, if you ignore the huge "
+        + "amount of blood seeping out of Micha's body.";
+  },
+  Use: function(world, onWhat) {
+    world.Print("You bang your fists against the floor in frustration. "
+        + "Nothing happens.");
+  },
+  CanGet: function(world) {
+    world.Print("Na-ah.");
   }
 });
 
@@ -2381,8 +2434,10 @@ murd.Game.prototype.OBJECTS = [
   murd.BANK_SOAP,
 
   murd.MURDER_CORPSE,
+  murd.MURDER_WOUND,
   murd.MURDER_KNIFE,
   murd.MURDER_BLOOD,
+  murd.MURDER_FLOOR,
 
   murd.PIZZA,
   murd.PIZZERIA_SINK,
