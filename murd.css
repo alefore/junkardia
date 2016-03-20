@@ -38,6 +38,7 @@ html, body {
   padding: 5px;
 }
 #inputbox {
+  padding: 5px;
   width: 100%;
 }
 div.msg {
