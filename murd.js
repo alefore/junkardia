@@ -910,13 +910,14 @@ murd.STAIRS_1 = engine.MakeRoom({
   ALIASES: ["stairs"],
   Description: function(world) {
     var description = "You're in the stairs at floor 1."
-        + " From here you can go down to " + linkToRoom(murd.BANK_RECEPTION)
-        + " or up to " + linkToRoom(murd.OFFICE) + ".";
     if (murd.OFFICE.timeWorking == 3) {
       description +=
           " The corpse of your coworker, Micha, is laying on the floor. Blood "
           + "is dripping from a big wound in him.";
     }
+    description += " From here you can go down to "
+        + linkToRoom(murd.BANK_RECEPTION) + " or up to "
+        + linkToRoom(murd.OFFICE) + ".";
     return description;
   },
   CanEnter: function(world) {
@@ -944,7 +945,12 @@ murd.STAIRS_1 = engine.MakeRoom({
   },
   Exits: function(world) {
     return {"bank-3-office": true, "reception": true};
-  }
+  },
+  Update: function(world) {
+    if (murd.OFFICE.timeWorking == 3) {
+      this.Add(murd.MURDER_CORPSE);
+    }
+  },
 });
 
 murd.JAIL = engine.MakeRoom({
@@ -1722,6 +1728,7 @@ murd.COWORKER = engine.MakeObject({
 function notifyTimePass(world) {
   murd.OFFICE.timeWorking++;
   murd.BANK_2_OFFICE.Update(world);
+  murd.STAIRS_1.Update(world);
 }
 
 murd.COMPUTER = engine.MakeObject({
@@ -2106,11 +2113,11 @@ murd.PIZZERIA_VOMIT = engine.MakeObject({
   },
 });
 
-murd.CORPSE = engine.MakeObject({
+murd.MURDER_CORPSE = engine.MakeObject({
   NAME: "corpse",
   TITLE: "a corpse",
   ALIASES: ["micha", "coworker"],
-  INITIAL_LOCATION: murd.STAIRS_1,
+  INITIAL_LOCATION: null,
   skipContents: true,
   Detail: function(world) {
     return "The corpse of your coworker, Micha, is laying on the floor. "
@@ -2125,6 +2132,7 @@ murd.CORPSE = engine.MakeObject({
   }
 });
 
+murd.MURDER_KNIFE
 murd.JAIL_BED = engine.MakeObject({
   NAME: "bedroom-bed",
   TITLE: "a crappy bed",
@@ -2324,7 +2332,7 @@ murd.Game.prototype.OBJECTS = [
   murd.BANK_SINK,
   murd.BANK_SOAP,
 
-  murd.CORPSE,
+  murd.MURDER_CORPSE,
 
   murd.PIZZA,
   murd.PIZZERIA_SINK,
