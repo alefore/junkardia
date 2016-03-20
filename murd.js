@@ -19,9 +19,11 @@ function pickRandomMessage(options) {
   return options[Math.floor(Math.random() * options.length)];
 }
 
-function isShowerCommand(verb, words) {
-  return verb == "shower"
-      || ((verb == "use" || verb == "take") && words[0] == "shower");
+function isShowerCommand(parsed) {
+  return parsed.MatchAny([
+      {verb: /shower/, entities: []},
+      {verb: /use|get/, entities: [murd.SHOWER]},
+  ]);
 }
 
 // Returns `text`. If showLink is true, shows it with a link that, when clicked,
@@ -62,10 +64,10 @@ murd.DREAM = engine.MakeRoom({
     }
     return out;
   },
-  HandleAction: function(world, verb, words) {
+  HandleAction: function(world, parsed) {
     if (murd.DREAM_MONSTER.location != this) {
       world.Print(
-          (verb == "no" || verb == "n"
+          (parsed.verb == "no" || parsed.verb == "n"
                ? "Sure. " : "There's no time for instructions: ")
           + "A big red scary monster appears and starts chasing you! "
           + "Its head glows red. "
@@ -83,18 +85,16 @@ murd.DREAM = engine.MakeRoom({
               " is closing in!",
               " is rushing towards you!"]));
     }
-    if (verb == "run") {
+    if (parsed.verb == "run") {
       world.Print("You try to get away but the monster catches up with you and "
                   + "eats you.");
       this.playerAlive = false;
       world.Enter(murd.BEDROOM);
       return true;
     }
-    if (verb == "check") {
-      if (words[0] == "mail" || words[0] == "mailbox") {
-        world.Print(murd.DREAM_MAILBOX.Detail(world));
-        return true;
-      }
+    if (parsed.Match({verb: /check/, entities: [murd.DREAM_MAILBOX]})) {
+      world.Print(murd.DREAM_MAILBOX.Detail(world));
+      return true;
     }
     return false;
   },
@@ -187,14 +187,15 @@ murd.BEDROOM = engine.MakeRoom({
     return true;
   },
 
-  HandleAction: function(world, verb, words) {
-    if (isShowerCommand(verb, words)) {
+  HandleAction: function(world, parsed) {
+    if (isShowerCommand(parsed)) {
       world.Print(
           "I can't do that in the bedroom, but I think there's a shower in the "
           + "restroom.");
       return true;
     }
-    if (verb == "turn" && words[0] == "off" && words[1] == "clock") {
+    if (parsed.Match(
+          {verb: /turn/, entities: [murd.ALARM_CLOCK], modifiers: [/off/]})) {
       murd.ALARM_CLOCK.Use(world, null);
       return true;
     }
@@ -253,10 +254,6 @@ murd.RESTROOM = engine.MakeRoom({
   },
 
   CanEnter: function(world) {
-    if (!world.GetFlag("restroomDoorOpen")) {
-      world.Print("The door is closed.");
-      return false;
-    }
     world.Print("You enter the restroom.");
     return true;
   },
@@ -267,16 +264,16 @@ murd.RESTROOM = engine.MakeRoom({
   Exits: function(world) {
     return {"bedroom": true}
   },
-  HandleAction: function(world, verb, words) {
-    if (isShowerCommand(verb, words)) {
+  HandleAction: function(world, parsed) {
+    if (isShowerCommand(parsed)) {
       murd.SHOWER.Use(world);
       return true;
     }
-    if (words[0] == "window") {
-      if (verb == "open") {
+    if (parsed.Match({entities: [murd.RESTROOM_WINDOW]})) {
+      if (parsed.Match({verb: /open/})) {
         murd.RESTROOM_WINDOW.Open(world);
         return true;
-      } else if (verb == "close") {
+      } else if (parsed.Match({verb: /close/})) {
         murd.RESTROOM_WINDOW.Close(world);
         return true;
       }
@@ -367,8 +364,9 @@ function ExitsTrainLines(room, exits) {
   return exits;
 }
 
-function HandleTrainStationAction(world, verb, words) {
-  var sentence = [verb].concat(words).join(" ");
+function HandleTrainStationAction(world, parsed) {
+  /*
+   * var sentence = [verb].concat(words).join(" ");
   var pattern =
       "^(board|get|take|ride)"
       + "( the( mother[ -]?fucking)?)?"
@@ -386,7 +384,7 @@ function HandleTrainStationAction(world, verb, words) {
   if (result != null) {
     world.GoAction([result[result.length - 1]]);
     return true;
-  }
+  }*/
 
   return false;
 }
@@ -563,8 +561,8 @@ murd.TESSINERPLATZ = engine.MakeRoom({
   }
 });
 
-function HandleUseLiftAction(world, verb, words) {
-  if (verb == "use" && words.length == 1 && words[0] == "lift") {
+function HandleUseLiftAction(world, parsed) {
+  if (parsed.Match({verb: /use/, entities: [murd.BANK_LIFT]})) {
     world.Enter(murd.BANK_LIFT);
     return true;
   }
@@ -649,8 +647,14 @@ murd.BANK_LIFT = engine.MakeRoom({
            + linkToAction(2 in this.floorsVisited, "use 2", "2") + ", and "
            + linkToAction(3 in this.floorsVisited, "use 3", "3") + ".";
   },
-  HandleAction: function(world, verb, words) {
-    if ((verb == "use" || verb == "press")
+  HandleAction: function(world, parsed) {
+    if (parsed.Match({verb: /use|press/, entities: [engine.ANY_OBJECT]})) {
+      if (parsed.entities[0].IS_BANK_LIFT) {
+        parsed.entities[0].Use(world);
+        return true;
+      }
+    }
+    /*if ((verb == "use" || verb == "press")
         && words.length == 2 && words[0] == "button"
         && dispatchBankLiftButton(world, words[1])) {
       return true;
@@ -658,8 +662,8 @@ murd.BANK_LIFT = engine.MakeRoom({
     if (verb == "press" && words.length == 1
         && dispatchBankLiftButton(world, words[0])) {
       return true;
-    }
-    return HandleUseLiftAction(world, verb, words);
+    }*/
+    return HandleUseLiftAction(world, parsed);
   },
   CanEnter: function(world) {
     // Technically, the lift is already at the current floor, but pretending it
@@ -965,12 +969,12 @@ murd.JAIL = engine.MakeRoom({
            + "There's nothing to do and nowhere to go. "
            + "You've lost.";
   },
-  HandleAction: function(world, verb, words) {
-    if (verb == "catch" && words[0] == "mouse") {
+  HandleAction: function(world, parsed) {
+    if (parsed.Match({verb: /catch/, entities: [murd.JAIL_MOUSE]})) {
       murd.JAIL_MOUSE.CanGet(world);
       return true;
     }
-    if (verb == "sleep") {
+    if (parsed.Match({verb: /sleep/, entities: []})) {
       murd.JAIL_BED.Use(world);
       return true;
     }
@@ -1659,6 +1663,7 @@ function MakeLiftButton(data) {
   return engine.MakeObject({
     NAME: data.floor.toString(),
     TITLE: "button " + data.floor,
+    ALIASES: ["" + data.floor],
     INITIAL_LOCATION: murd.BANK_LIFT,
     Use: function(world, onWhat) {
       if (data.floor == 1) {
@@ -1685,7 +1690,8 @@ function MakeLiftButton(data) {
     CanGet: function(world) {
       world.Print("It's attached to the panel.");
       return false;
-    }
+    },
+    IS_BANK_LIFT: true,
   });
 }
 
@@ -2289,33 +2295,18 @@ murd.Game = function() {
 };
 murd.Game.prototype = new engine.Game();
 murd.Game.prototype.InitState = function(world) {
-  world.SetFlag("restroomDoorOpen", false);
   world.SetFlag(murd.flags.foodEaten, 0);
 };
 
-murd.Game.prototype.HandleAction = function(world, verb, words) {
-  if (verb == "open") {
-    if (words[0] == "door") {
-      if (world.location != murd.BEDROOM) {
-        return false;
-      }
-      world.SetFlag("restroomDoorOpen", true);
-      world.Print("Ok");
-      return true;
+murd.Game.prototype.HandleAction = function(world, parsed) {
+  if (parsed.Match({verb: /eat/, entities: [murd.PIZZA]})) {
+    if (murd.PIZZA.location != world.location
+        && murd.PIZZA.location != world.INVENTORY) {
+      world.Print("I'd love to, but I see no pizza here.");
+    } else {
+      murd.PIZZA.Use(world, null);
     }
-    return false;
-  }
-
-  if (verb == "eat") {
-    if (words[0] == "pizza") {
-      if (murd.PIZZA.location != world.location
-          && murd.PIZZA.location != world.INVENTORY) {
-        world.Print("I'd love to, but I see no pizza here.");
-      } else {
-        murd.PIZZA.Use(world, null);
-      }
-      return true;
-    }
+    return true;
   }
 
   return false;
