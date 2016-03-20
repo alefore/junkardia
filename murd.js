@@ -596,7 +596,7 @@ murd.BANK_RECEPTION = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"lift": true, "tessinerplatz": true};
+    return {"lift": true, "tessinerplatz": true, "stairs-1": true};
   }
 });
 
@@ -664,6 +664,12 @@ murd.BANK_LIFT = engine.MakeRoom({
   CanEnter: function(world) {
     // Technically, the lift is already at the current floor, but pretending it
     // is arriving makes things slightly more colorful.
+    if (murd.OFFICE.timeWorking == 3) {
+      world.Print(
+          "You try to call the lift but it doesn't come; it appears to be out "
+          + "of service. Ugh, looks like you'll have to take the stairs.");
+      return false;
+    }
     world.Print("You press the button to call the lift. " + pickRandomMessage([
         "It arrives instantaneously.",
         "It takes a while but the lift finally arrives.",
@@ -726,15 +732,7 @@ function CanLeaveOfficeFloor(world, toRoom) {
     return false;
   }
   if (timeWorking == 3) {
-    world.Print(
-        "You try to take " + linkToRoom(murd.BANK_LIFT)
-        + " down but it appears to be out of service. "
-        + "Ugh, you'll have to take the stairs.<br>"
-        + "As you're walking down, you stumble and nearly fall as you find "
-        + "the <b>murder scene</b>! The body of your coworker Micha is "
-        + "laying on the ground, between floors 2 and 1!<br>"
-        + "Welcome to Micha's Murder Mistery!<br>"
-        + "<h1>You've won.</h1>");
+    return true;
   }
   return true;
 }
@@ -873,13 +871,14 @@ murd.OFFICE = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"lift": true, "bank-3-toilet": true};
+    return {"lift": true, "bank-3-toilet": true, "stairs-1": true};
   }
 });
 
 murd.BANK_TOILET = engine.MakeRoom({
   NAME: "bank-3-toilet",
   TITLE: "a small toilet",
+  ALIASES: ["toilet"],
   Description: function(world) {
     return "You're in a standard, if a bit small, office toilet. It has "
            + "gray tiles and smells of cheap soap. Jazmin.<br>"
@@ -899,8 +898,41 @@ murd.BANK_TOILET = engine.MakeRoom({
   },
   CanLeave: CanLeaveOfficeFloor,
   Exits: function(world) {
-    return {"lift": true, "bank-3-office": true};
+    return {"lift": true, "bank-3-office": true, "stairs-1": true};
   },
+});
+
+// TODO: When we support per-exit aliases, add more stairs, make the player
+// actually traverse them.
+murd.STAIRS_1 = engine.MakeRoom({
+  NAME: "stairs-1",
+  TITLE: "the stairs",
+  ALIASES: ["stairs"],
+  Description: function(world) {
+    var description = "You're in the stairs at floor 1."
+        + " From here you can go down to " + linkToRoom(murd.BANK_RECEPTION)
+        + " or up to " + linkToRoom(murd.OFFICE) + ".";
+    if (murd.OFFICE.timeWorking == 3) {
+      description +=
+          " The corpse of your coworker, Micha, is laying on the floor. Blood "
+          + "is dripping from a big wound on him.";
+    }
+    return description;
+  },
+  CanEnter: function(world) {
+    if (world.location == murd.OFFICE && murd.OFFICE.timeWorking == 3) {
+      world.Print(
+          "As you're walking down, you stumble and nearly fall as you find "
+          + "the murder scene!<br>"
+          + "The body of your coworker Micha is laying on the ground, between "
+          + "floors 2 and 1!<br>"
+          + "Welcome to Micha's Murder Mistery!");
+    }
+    return true;
+  },
+  Exits: function(world) {
+    return {"bank-3-office": true, "reception": true};
+  }
 });
 
 murd.JAIL = engine.MakeRoom({
@@ -1913,7 +1945,7 @@ murd.PIZZA = engine.MakeObject({
     if (world.location == murd.PIZZERIA) {
       description +=
           "While you're eating, your coworker stands up and leaves.<br>";
-    } else if (world.location == murd.BANK_OFFICE_2) {
+    } else if (world.location == murd.BANK_2_OFFICE) {
       description +=
           "While you're eating, your coworker arrives, gives you a weird "
           + "look, and starts working.<br>";
@@ -2212,6 +2244,7 @@ murd.Game.prototype.ROOMS = [
   murd.BANK_2_OFFICE,
   murd.BANK_2_TOILET,
   murd.OFFICE,
+  murd.STAIRS_1,
   murd.BANK_TOILET,
   murd.JAIL,
 ];
