@@ -915,20 +915,32 @@ murd.STAIRS_1 = engine.MakeRoom({
     if (murd.OFFICE.timeWorking == 3) {
       description +=
           " The corpse of your coworker, Micha, is laying on the floor. Blood "
-          + "is dripping from a big wound on him.";
+          + "is dripping from a big wound in him.";
     }
     return description;
   },
   CanEnter: function(world) {
-    if (world.location == murd.OFFICE && murd.OFFICE.timeWorking == 3) {
+    if ((world.location == murd.OFFICE || world.location == murd.BANK_TOILET)
+        && murd.OFFICE.timeWorking == 3) {
       world.Print(
           "As you're walking down, you stumble and nearly fall as you find "
-          + "the murder scene!<br>"
-          + "The body of your coworker Micha is laying on the ground, between "
+          + "the murder scene!"
+          + " The body of your coworker Micha is laying on the ground, between "
           + "floors 2 and 1!<br>"
           + "Welcome to Micha's Murder Mistery!");
     }
     return true;
+  },
+  DescribeContents: function(world, objects) {
+    var out = []
+    for (var i in objects) {
+      var obj = objects[i];
+      if (obj.skipContents) {
+        continue;
+      }
+      out.push(obj)
+    }
+    return out;
   },
   Exits: function(world) {
     return {"bank-3-office": true, "reception": true};
@@ -2094,6 +2106,25 @@ murd.PIZZERIA_VOMIT = engine.MakeObject({
   },
 });
 
+murd.CORPSE = engine.MakeObject({
+  NAME: "corpse",
+  TITLE: "a corpse",
+  ALIASES: ["micha", "coworker"],
+  INITIAL_LOCATION: murd.STAIRS_1,
+  skipContents: true,
+  Detail: function(world) {
+    return "The corpse of your coworker, Micha, is laying on the floor. "
+        + "It looks like there's a Swiss Army knife stuck in his back.";
+  },
+  Use: function(world, onWhat) {
+    world.Print("You're not THAT hungry.");
+  },
+  CanGet: function(world) {
+    world.Print("You try to lift it but it's too heavy.");
+    return false;
+  }
+});
+
 murd.JAIL_BED = engine.MakeObject({
   NAME: "bedroom-bed",
   TITLE: "a crappy bed",
@@ -2292,6 +2323,8 @@ murd.Game.prototype.OBJECTS = [
 
   murd.BANK_SINK,
   murd.BANK_SOAP,
+
+  murd.CORPSE,
 
   murd.PIZZA,
   murd.PIZZERIA_SINK,
