@@ -144,6 +144,7 @@ engine.ActionParser.prototype.Parse = function(world, words) {
 engine.ActionParser.prototype.PREPOSITIONS = [
   'in',
   'at',
+  'away',
   'over',
   'under',
   'inside',

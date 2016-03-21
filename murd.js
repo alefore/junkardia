@@ -85,7 +85,9 @@ murd.DREAM = engine.MakeRoom({
               " is closing in!",
               " is rushing towards you!"]));
     }
-    if (parsed.verb == "run") {
+    if (parsed.MatchAny([
+            {verb: /go/, entities: [], modifiers: [/(?:away)?/]},
+            {verb: /go/, entities: [], modifiers: []},])) {
       world.Print("You try to get away but the monster catches up with you and "
                   + "eats you.");
       this.playerAlive = false;
@@ -117,18 +119,20 @@ murd.BEDROOM = engine.MakeRoom({
 
   Init: function() {
     this.alarmClockOn = true;
+    this.bedMade = false;
   },
 
   Description: function(world) {
-    var description =
-        "Your bedroom is a bit messy. There's an unmade bed and a nightstand "
-        + "besides it.";
+    var description = "Your bedroom is a bit messy. ";
     if (this.alarmClockOn) {
-      description += " Theres t... *BEEP* *BEEP* *BEEP*... "
-          + "The annoying alarm clock is beeping loudly."
+      description += " ... *BEEP* *BEEP* *BEEP*... "
+          + "There's ... The annoying alarm clock is beeping loudly."
+          + " You can't even think with all this noise!";
     } else {
-      description +=
-          " There's two doors here, one leads to "
+      description += "There's "
+          + (this.bedMade ? "a comfortable bed" : "an unmade bed")
+          + " and a nightstand besides it."
+          + " There's two doors here, one leads to "
           + linkToRoom(murd.RESTROOM)
           + " and one down to "
           + linkToRoom(murd.BRUPBACHERPLATZ)
@@ -139,6 +143,9 @@ murd.BEDROOM = engine.MakeRoom({
 
   DescribeContents: function(world, objects) {
     var out = []
+    if (this.alarmClockOn) {
+      return [];
+    }
     for (var i in objects) {
       var obj = objects[i];
       if (obj == murd.ALARM_CLOCK) {
@@ -199,6 +206,13 @@ murd.BEDROOM = engine.MakeRoom({
       murd.ALARM_CLOCK.Use(world, null);
       return true;
     }
+    if (parsed.MatchAny([
+            {verb: /make|fix|tidy|clean/, entities: [murd.BED]},
+            {verb: /clean|tidy/, entities: [murd.BED], modifiers: [/up/]}])) {
+      this.bedMade = true;
+      world.Print("You tidy up your bed a bit.");
+      return true;
+    }
     return false;
   },
 
@@ -210,7 +224,7 @@ murd.BEDROOM = engine.MakeRoom({
 murd.RESTROOM = engine.MakeRoom({
   NAME: "home-restroom",
   TITLE: "the restroom",
-  ALIASES: ["restroom"],
+  ALIASES: ["restroom", "toilet", "bathroom"],
 
   Init: function() {
     // TODO: Make this a property of RESTROOM_WINDOW.
@@ -1540,6 +1554,9 @@ murd.SINK = engine.MakeObject({
   NAME: "sink",
   TITLE: "the sink",
   INITIAL_LOCATION: murd.RESTROOM,
+  Use: function(world, onWhat) {
+    world.Print("You wash your hands on the sink. The water is a bit cold.");
+  },
   CanGet: function(world) {
     world.Print(pickRandomMessage([
         "It's attached to the wall.",
