@@ -163,11 +163,6 @@ engine.World.prototype.Drop = function(obj) {
 };
 
 engine.World.prototype.Destroy = function(obj) {
-  if (obj.location != this.INVENTORY) {
-    console.log('Error: trying to destroy object "' + obj.NAME + '",' +
-        'but it is not in the inventory.')
-    return;
-  }
   this.LIMBO.Add(obj);
 };
 

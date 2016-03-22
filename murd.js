@@ -933,7 +933,7 @@ murd.BANK_TOILET = engine.MakeRoom({
         && world.GetFlag(murd.flags.foodEaten) == 1
         && !world.GetFlag(murd.flags.hasCleanHands)) {
       world.Print(pickRandomMessage([
-          "Ugh, looks like one of your colleages is locked in in there.",
+          "Ugh, looks like one of your colleagues is locked in in there.",
           "You try to turn the knob but the door is locked from inside."]));
       return false;
     }
@@ -952,26 +952,38 @@ murd.STAIRS_1 = engine.MakeRoom({
   TITLE: "the stairs",
   ALIASES: ["stairs"],
   Description: function(world) {
-    var description = "You're in the stairs at floor 1."
-    if (murd.OFFICE.timeWorking == 3) {
+    var description = "You're in the stairs at floor 1. "
+    if (murd.MURDER_DYING_COWORKER.location == this) {
+      description += "Your coworker, Micha, is laying on the floor, "
+         + pickRandomMessage(["dying", "blood dripping out of him"])
+         + ". Looks like he's still alive, but barely concious!";
+    } else if (murd.MURDER_CORPSE.location == this) {
       description +=
-          " The corpse of your coworker, Micha, is laying on the floor. Blood "
+          "The corpse of your coworker, Micha, is laying on the floor. Blood "
           + "is dripping from a big wound in him.";
+    } else {
+      description += " This is a very unremarkable space.";
     }
-    description += " From here you can go down to "
+    description += "<br>From here you can go down to "
         + linkToRoom(murd.BANK_RECEPTION) + " or up to "
         + linkToRoom(murd.OFFICE) + ".";
     return description;
+  },
+  HandleAction: function(world, parsed) {
+    if (parsed.Match({verb: /disappear/, entities: [], modifiers: []})) {
+      world.Print("You'll have to be more specific than that.");
+      return true;
+    }
+    return false;
   },
   CanEnter: function(world) {
     if ((world.location == murd.OFFICE || world.location == murd.BANK_TOILET)
         && murd.OFFICE.timeWorking == 3) {
       world.Print(
-          "As you're walking down, you stumble and nearly fall as you find "
-          + "the murder scene!"
-          + " The body of your coworker Micha is laying on the ground, between "
-          + "floors 2 and 1!<br>"
-          + "Welcome to Micha's Murder Mistery!");
+          "As you're walking down, between floors 2 and 1, you stumble and "
+          + "nearly fall as you find your coworker Micha laying on the "
+          + "ground!");
+      this.Add(murd.MURDER_DYING_COWORKER);
     }
     return true;
   },
@@ -986,13 +998,20 @@ murd.STAIRS_1 = engine.MakeRoom({
     }
     return out;
   },
+  CanLeave: function(world, toRoom) {
+    if (murd.MURDER_DYING_COWORKER.location == this) {
+      world.Print(pickRandomMessage([
+          "You can't leave your coworker to die alone! "
+          + "You're not a monster!",
+          "You try to leave to find a phone and call for help but he's "
+          + "clasping your sleeve and won't let go. It looks like he knows "
+          + "he's done for and would rather you stayed with him."]));
+      return false;
+    }
+    return true;
+  },
   Exits: function(world) {
     return {"bank-3-office": true, "reception": true};
-  },
-  Update: function(world) {
-    if (murd.OFFICE.timeWorking == 3) {
-      this.Add(murd.MURDER_CORPSE);
-    }
   },
 });
 
@@ -1701,7 +1720,6 @@ murd.BANK_PALM_TREE = engine.MakeObject({
   },
 });
 
-
 function MakeLiftButton(data) {
   return engine.MakeObject({
     NAME: data.floor.toString(),
@@ -1743,11 +1761,13 @@ murd.BANK_LIFT_BUTTON_1 = MakeLiftButton({ floor: 1 });
 murd.BANK_LIFT_BUTTON_2 = MakeLiftButton({ floor: 2 });
 murd.BANK_LIFT_BUTTON_3 = MakeLiftButton({ floor: 3 });
 
+murd.coworkerAliases = ["micha", "colleague", "coworker", "co-worker"];
+
 murd.COWORKER = engine.MakeObject({
-  NAME: "coworker",
+  NAME: "alive-coworker",
   TITLE: "your coworker",
   INITIAL_LOCATION: murd.BANK_2_OFFICE,
-  ALIASES: ["coworker", "micha", "colleage"],
+  ALIASES: murd.coworkerAliases,
   Detail: function(world) {
     var description = "Your coworker, Micha, is dressed very sharply. ";
     if (this.location == murd.BANK_2_OFFICE) {
@@ -1777,7 +1797,6 @@ murd.COWORKER = engine.MakeObject({
 function notifyTimePass(world) {
   murd.OFFICE.timeWorking++;
   murd.BANK_2_OFFICE.Update(world);
-  murd.STAIRS_1.Update(world);
 }
 
 murd.COMPUTER = engine.MakeObject({
@@ -2213,10 +2232,45 @@ murd.PIZZERIA_VOMIT = engine.MakeObject({
   },
 });
 
+murd.MURDER_DYING_COWORKER = engine.MakeObject({
+  NAME: "dying-coworker",
+  TITLE: "a dying coworker",
+  ALIASES: murd.coworkerAliases,
+  INITIAL_LOCATION: null,
+  skipContents: true,
+  Detail: function(world) {
+    return "Your coworker, Micha, is laying on the ground, bleeding profusely. "
+        + "He's barely concious. "
+        + "Blood is coming from a big wound in his back. "
+        + "He's clasping your sleeve at your wrist, asking you to stay with "
+        + "him in his final moments.";
+  },
+  Use: function(world, onWhat) {
+    murd.MURDER_CORPSE.Use(world, onWhat);
+  },
+  DescribeContents: function(world, objects) {
+    var out = [];
+    for (var i in objects) {
+      var obj = objects[i];
+      if (obj == murd.MURDER_WOUND) {
+        continue;  // Already explicitly mentioned.
+      }
+      out.push(obj)
+    }
+    return out;
+  },
+  CanGet: function(world) {
+    world.Print(
+        "As you try to lift him, he shakes his head. He knows that he's done "
+        + "for.");
+    return false;
+  },
+});
+
 murd.MURDER_CORPSE = engine.MakeObject({
   NAME: "corpse",
   TITLE: "a corpse",
-  ALIASES: ["micha", "coworker"],
+  ALIASES: murd.coworkerAliases,
   INITIAL_LOCATION: null,
   skipContents: true,
   Detail: function(world) {
@@ -2248,9 +2302,12 @@ murd.MURDER_CORPSE = engine.MakeObject({
 
 murd.MURDER_WOUND = engine.MakeObject({
   NAME: "wound",
-  INITIAL_LOCATION: murd.MURDER_CORPSE,
+  INITIAL_LOCATION: murd.MURDER_DYING_COWORKER,
   Detail: function(world) {
-    return "The corpse has a big wound in his back. "
+    return (this.location == murd.MURDER_DYING_COWORKER
+                ? "Your coworker"
+                : "The corpse")
+        + " has a big wound in his back. "
         + "Blood is still coming out of it."
         + (murd.MURDER_KNIFE.location == this
                ? " A small Swiss Army knife is stuck in it."
@@ -2282,21 +2339,34 @@ murd.MURDER_KNIFE = engine.MakeObject({
   ALIASES: ["swiss army knife", "pocket knife"],
   INITIAL_LOCATION: murd.MURDER_WOUND,
   Detail: function(world) {
-    return "A small Swiss army knife. It's covered in Micha's blood.";
+    return "A small Swiss army knife"
+        + (murd.MURDER_WOUND.location == murd.MURDER_DYING_COWORKER
+              ? " lodged in Micha's wound"
+              : "")
+        + ". It's covered in Micha's blood.";
   },
   Use: function(world, onWhat) {
     if (onWhat == murd.MURDER_CORPSE
-        || onWhat == murd.MURDER_WOUND) {
+        || onWhat == murd.MURDER_WOUND
+        || onWhat == murd.MURDER_DYING_COWORKER) {
       world.Print("No way, why would I do that!");
     } else {
       world.Print("I have no use for the Swiss Army knife here.");
     }
   },
   CanGet: function(world) {
-    world.Print("As you take the knife out of the wound, you hear sirens from "
-        + "the police just outside the building. Oh, shit. You should probably "
-        + "leave the building!");
+    world.Print("As you take the knife out of the wound, blood starts coming "
+        + "out of Micha and he finally kicks the bucket. :-( Damn...<br>"
+        + "You can't believe this is happening. Some time goes by, hard to say "
+        + "how much. "
+        + "Eventually, you hear sirens from the police just outside the "
+        + "building. Oh, shit. You should probably disappear!");
+
     world.Print("<h1>To be continued ...</h1>");
+
+    world.Destroy(murd.MURDER_DYING_COWORKER);
+    murd.STAIRS_1.Add(murd.MURDER_CORPSE);
+    murd.MURDER_CORPSE.Add(murd.MURDER_WOUND);
     return true;
   }
 });
@@ -2309,11 +2379,15 @@ murd.MURDER_BLOOD = engine.MakeObject({
     return "Micha's blood is still dripping out of him.";
   },
   Use: function(world, onWhat) {
-    if (onWhat == murd.MURDER_CORPSE) {
+    if (onWhat == murd.MURDER_CORPSE
+        || onWhat == murd.MURDER_WOUND
+        || onWhat == murd.MURDER_DYING_COWORKER) {
       world.Print("At this point his blood is all over the floor, there's not "
           + "much you can do.");
     } else {
-      world.Print("You're not THAT thirsty. This is not a vampire's game.");
+      world.Print(pickRandomMessage([
+          "You're not THAT thirsty.",
+          "You're not a vampire (yet)."]));
     }
   },
   CanGet: function(world) {
@@ -2331,7 +2405,7 @@ murd.MURDER_FLOOR = engine.MakeObject({
   skipContents: true,
   Detail: function(world) {
     return "The floor is mostly clean... that is, if you ignore the huge "
-        + "amount of blood seeping out of Micha's body.";
+        + "amount of blood.";
   },
   Use: function(world, onWhat) {
     world.Print("You bang your fists against the floor in frustration. "
@@ -2526,6 +2600,7 @@ murd.Game.prototype.OBJECTS = [
   murd.BANK_SINK,
   murd.BANK_SOAP,
 
+  murd.MURDER_DYING_COWORKER,
   murd.MURDER_CORPSE,
   murd.MURDER_WOUND,
   murd.MURDER_KNIFE,
