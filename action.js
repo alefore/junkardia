@@ -146,6 +146,7 @@ engine.ActionParser.prototype.PREPOSITIONS = [
   'at',
   'away',
   'over',
+  'from',
   'under',
   'inside',
   'into',

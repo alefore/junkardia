@@ -92,7 +92,30 @@ murd.DREAM = engine.MakeRoom({
       world.Enter(murd.BEDROOM);
       return true;
     }
-    if (parsed.Match({verb: /check/, entities: [murd.DREAM_MAILBOX]})) {
+    if (parsed.MatchAny([
+            {verb: /hide/, entities: [murd.DREAM_MONSTER], modifiers: [/from/]},
+            {verb: /hide/, entities: [], modifiers: []},])) {
+      world.Print(pickRandomMessage([
+          "You see no place to hide!",
+          "There's no place to hide!"]));
+      return true;
+    }
+    if (parsed.MatchAny([
+            {verb: /fight/, entities: [murd.DREAM_MONSTER], },
+            {verb: /fight/, entities: [], modifiers: []},])) {
+      if (murd.DREAM_SPOON.location == world.INVENTORY) {
+        world.Print(
+            "You try to fight the monster armed with nothing but the "
+            + "unremarkable spoon and a lot of courage. It's pointless: "
+            + "The monster eats you.");
+        this.playerAlive = false;
+        world.Enter(murd.BEDROOM);
+        return true;
+      }
+      world.Print("Fighting the monster barehand? That's crazy! No way!");
+      return true;
+    }
+    if (parsed.Match({verb: /open|check/, entities: [murd.DREAM_MAILBOX]})) {
       world.Print(murd.DREAM_MAILBOX.Detail(world));
       return true;
     }
@@ -121,10 +144,13 @@ murd.BEDROOM = engine.MakeRoom({
   },
 
   Description: function(world) {
-    var description = "Your bedroom is a bit messy. ";
+    var description =
+        this.bedMade
+            ? "You're in your bedroom. "
+            : "Your bedroom is a bit messy. ";
     if (this.alarmClockOn) {
-      description += " ... *BEEP* *BEEP* *BEEP*... "
-          + "There's ... The annoying alarm clock is beeping loudly."
+      description += "There's ... *BEEP* *BEEP* *BEEP* ..."
+          + " The annoying alarm clock is beeping loudly."
           + " You can't even think with all this noise!";
     } else {
       description += "There's "
