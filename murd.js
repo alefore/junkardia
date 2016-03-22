@@ -24,6 +24,17 @@ function isShowerCommand(parsed) {
   ]);
 }
 
+function describeContentsWithSkip(world, objects) {
+  var out = [];
+  for (var i in objects) {
+    var obj = objects[i];
+    if (!obj.skipContents) {
+      out.push(obj)
+    }
+  }
+  return out;
+}
+
 // Returns `text`. If showLink is true, shows it with a link that, when clicked,
 // performs action.
 function linkToAction(showLink, action, text) {
@@ -51,17 +62,7 @@ murd.DREAM = engine.MakeRoom({
         + "boarded front door. There is a small mailbox here.<br>"
         + "A big monster is running towards you!";
   },
-  DescribeContents: function(world, objects) {
-    var out = [];
-    for (var i in objects) {
-      var obj = objects[i];
-      if (obj.skipContents) {
-        continue;  // Already explicitly mentioned.
-      }
-      out.push(obj)
-    }
-    return out;
-  },
+  DescribeContents: describeContentsWithSkip,
   HandleAction: function(world, parsed) {
     if (murd.DREAM_MONSTER.location != this) {
       world.Print(
@@ -219,6 +220,9 @@ murd.BEDROOM = engine.MakeRoom({
       if (this.alarmClockOn) {
         world.Print("You should turn that stupid alarm clock off first.");
         return false;
+      }
+      if (murd.WALLET.location != world.INVENTORY) {
+        world.Print("You have a funny feeling you're forgetting something.");
       }
       murd.BEDROOM_PLANT.dropIfHeld(world);
     }
@@ -624,7 +628,16 @@ murd.BANK_RECEPTION = engine.MakeRoom({
            + "here you can reach " + linkToRoom(murd.BANK_LIFT)
            + " or you can walk out to " + linkToRoom(murd.TESSINERPLATZ) + ".";
   },
-  HandleAction: HandleUseLiftAction,
+  HandleAction: function(world, parsed) {
+    if (parsed.Match(
+            {verb: /talk|greet/, entities: [murd.BANK_RECEPTIONIST]})) {
+      world.Print("You greet the receptionist. She smiles back at you as she "
+          + "talks on the phone.");
+      return true;
+    }
+    return HandleUseLiftAction(world, parsed);
+  },
+  DescribeContents: describeContentsWithSkip,
   CanEnter: function(world) {
     if (world.location == murd.BANK_LIFT) {
       world.Print("You exit the lift and walk into the reception.");
@@ -635,6 +648,8 @@ murd.BANK_RECEPTION = engine.MakeRoom({
         description += " The receptionist smiles as you walk through.";
       } else if (r < 0.6) {
         description += " The receptionist talks loudly on the phone.";
+      } else {
+        description += " The receptionist appears to be reading something.";
       }
       world.Print(description);
     }
@@ -995,17 +1010,7 @@ murd.STAIRS_1 = engine.MakeRoom({
     }
     return true;
   },
-  DescribeContents: function(world, objects) {
-    var out = []
-    for (var i in objects) {
-      var obj = objects[i];
-      if (obj.skipContents) {
-        continue;
-      }
-      out.push(obj)
-    }
-    return out;
-  },
+  DescribeContents: describeContentsWithSkip,
   CanLeave: function(world, toRoom) {
     if (murd.MURDER_DYING_COWORKER.location == this) {
       world.Print(pickRandomMessage([
@@ -1487,6 +1492,17 @@ murd.WALLET = engine.MakeObject({
   },
 });
 
+murd.PHONE = engine.MakeObject({
+  NAME: "cellphone",
+  TITLE: "your cell phone",
+  ALIASES: ["handy", "phone", "mobile", "mobile phone"],
+  INITIAL_LOCATION: null,
+  Details: function(world) {
+  },
+  CanGet: function(world) {
+  },
+});
+
 murd.LINT = engine.MakeObject({
   NAME: "lint",
   TITLE: "some pocket lint",
@@ -1699,6 +1715,48 @@ murd.TESSINERPLATZ_TREE = engine.MakeObject({
                   + "<h1>Game over!</h1>");
       world.location = murd.JAIL;
       world.DescribeRoom();
+    }
+    return false;
+  },
+});
+
+murd.BANK_RECEPTIONIST = engine.MakeObject({
+  NAME: "receptionist",
+  INITIAL_LOCATION: murd.BANK_RECEPTION,
+  TITLE: "the receptionist",
+  skipContents: true,
+  Detail: function(world) {
+    return "The receptionist never stops smiling, not even as she answers the "
+        + "phone.";
+  },
+  DescribeContents: describeContentsWithSkip,
+  Use: function(world, onWhat) {
+    world.Print("You have no use for her right now.");
+  },
+  CanGet: function(world) {
+    world.Print("That would be somewhat inappropriate, would likely get you "
+        + "fired.");
+    return false;
+  },
+});
+
+murd.BANK_RECEPTION_PHONE = engine.MakeObject({
+  NAME: "reception-phone",
+  INITIAL_LOCATION: murd.BANK_RECEPTIONIST,
+  TITLE: "the phone",
+  ALIASES: ["phone"],
+  skipContents: true,
+  Detail: function(world) {
+    return "The phone is gray and completely unremarkable.";
+  },
+  Use: function(world, onWhat) {
+    world.Print("You have no use for it right now.");
+  },
+  CanGet: function(world) {
+    if (murd.BANK_RECEPTIONIST.location == murd.BANK_RECEPTION) {
+      world.Print("It's practically glued to the receptionist's hand.");
+    } else {
+      world.Print("You have no use for it.");
     }
     return false;
   },
@@ -2593,6 +2651,8 @@ murd.Game.prototype.OBJECTS = [
   murd.TESSINERPLATZ_TREE,
 
   murd.BANK_PALM_TREE,
+  murd.BANK_RECEPTIONIST,
+  murd.BANK_RECEPTION_PHONE,
 
   murd.BANK_LIFT_BUTTON_0,
   murd.BANK_LIFT_BUTTON_1,
