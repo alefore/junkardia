@@ -1011,7 +1011,7 @@ murd.STAIRS_1 = engine.MakeRoom({
       world.Print(pickRandomMessage([
           "You can't leave your coworker to die alone! "
           + "You're not a monster!",
-          "You try to leave to find a phone and call for help but he's "
+          "You try to leave to find a phone and call for help but Micha is "
           + "clasping your sleeve and won't let go. It looks like he knows "
           + "he's done for and would rather you stayed with him."]));
       return false;
