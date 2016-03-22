@@ -2216,8 +2216,9 @@ murd.PIZZERIA_VOMIT = engine.MakeObject({
   TITLE: "vomit",
   INITIAL_LOCATION: null,
   Detail: function(world) {
-    return "The regurgitated remains of your pizza in the floor camouflage "
-        + "among other things.";
+    return "The regurgitated remains of your pizza add some color to the "
+        + "monochrome germ infested floor."
+        + pickRandomMessage(["", "", " The smell is making you dizzy."]);
   },
   Use: function(world, onWhat) {
     this.CanGet(world);
