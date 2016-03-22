@@ -95,9 +95,17 @@ murd.DREAM = engine.MakeRoom({
     if (parsed.MatchAny([
             {verb: /hide/, entities: [murd.DREAM_MONSTER], modifiers: [/from/]},
             {verb: /hide/, entities: [], modifiers: []},])) {
-      world.Print(pickRandomMessage([
-          "You see no place to hide!",
-          "There's no place to hide!"]));
+      world.Print("Hide where?");
+      return true;
+    }
+    if (parsed.MatchAny([
+            {verb: /hide/, entities: [murd.DREAM_MAILBOX],
+             modifiers: [/in|inside/]},
+            {verb: /hide/, entities: [murd.DREAM_MAILBOX, murd.DREAM_MONSTER],
+             modifiers: [/in|inside/, /from/]},
+            {verb: /hide/, entities: [murd.DREAM_MONSTER, murd.DREAM_MAILBOX],
+             modifiers: [/from/, /in|inside/]},])) {
+      murd.DREAM_MAILBOX.Use(world, null);
       return true;
     }
     if (parsed.MatchAny([
