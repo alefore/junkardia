@@ -8,8 +8,6 @@ murd.flags.foodEaten = "foodEaten";
 // Did we already warn him that he should have his wallet (train pass) whenever
 // he rides a train?
 murd.warnedTrainPass = "warnedTrainPass";
-// Has drank? Set when he drinks water, cleared when he uses the toilet.
-murd.flags.hasDrank = "hasDrank";
 // Are his hands clean? Set to true when he showers, to false when he eats
 // his pizza, needs to wash them in the fountain.
 murd.flags.hasCleanHands = "hasCleanHands";
@@ -540,6 +538,7 @@ murd.TESSINERPLATZ = engine.MakeRoom({
   Init: function() {
     // Did we already warn that uprooting the tree is a bad idea?
     this.warnedUprootTree = false;
+    this.hasUsedFountain = false;
   },
   Description: function(world) {
     return "You're in Tessinerplatz, a beautiful square in front of "
@@ -1013,6 +1012,7 @@ murd.JAIL = engine.MakeRoom({
 murd.PIZZERIA = engine.MakeRoom({
   NAME: "pizzeria",
   TITLE: "the Pizzeria Tricolore",
+  ALIASES: ["tricolore"],
   Init: function() {
     // So that if he drops the pizza and takes it again, we don't show him
     // paying again.
@@ -1057,10 +1057,9 @@ murd.PIZZERIA = engine.MakeRoom({
 murd.PIZZERIA_RESTROOM = engine.MakeRoom({
   NAME: "pizzeria-restroom",
   TITLE: "a smelly restroom",
-  ALIASES: ["restroom", "toilet",],
+  ALIASES: ["restroom", "toilet", "washroom", "bathroom",],
   Init: function() {
     this.hasUsedSink = false;
-    this.warnedFilthy = false;
     this.thrownUp = false;
     this.warnedVomit = false;
   },
@@ -1595,26 +1594,27 @@ murd.TESSINERPLATZ_FOUNTAIN = engine.MakeObject({
   TITLE: "a fountain",
   INITIAL_LOCATION: murd.TESSINERPLATZ,
   Use: function(world, onWhat) {
-    var descriptions;
-    if (!world.GetFlag(murd.flags.hasDrank)) {
-      descriptions = [
-          "Ahh, delicious water, fresh from the Alps. You quench your thirst.",
-          "You carefully drink a bit of water. Two drops land in your shirt.",
-          "You lean down and drink some water from the fountain. You're no "
-          + "longer thirsty."];
-      world.SetFlag(murd.flags.hasDrank, true);
-    } else if (!world.GetFlag(murd.flags.hasCleanHands)) {
-      descriptions = [
-          "You wash your hands in the water.",
-          "You rinse the grease away. The water feels cold in your hands."];
-      world.SetFlag(murd.flags.hasCleanHands, true);
-    } else {
-      descriptions = [
-          "You are not currently thirsty.",
-          "The water looks refreshing, but you're not thirsty.",
-          "You have no use for it right now."];
+    if (world.GetFlag(murd.flags.hasCleanHands)) {
+      world.Print("Your hands are already clean.");
+      return;
     }
-    world.Print(pickRandomMessage(descriptions));
+    if (onWhat == murd.PIZZERIA_SOAP) {
+      murd.PIZZERIA_SOAP.Use(world, this);
+      return;
+    }
+    murd.TESSINERPLATZ.hasUsedFountain = true;
+    world.Print(
+        "You try "
+        + pickRandomMessage(["fruitlessly ", ""])
+        + pickRandomMessage([
+            "to wash your hands in the water.",
+            "to rinse the grease away."])
+        + pickRandomMessage([
+            "",
+            " The water feels cold in your hands.",
+            " The water feels refreshing."])
+        + " Unfortunately, you can't get all the grease out; "
+        + "your hands are still dirty.");
   },
   CanGet: function(world) {
     world.Print("Eh? That makes no sense.");
@@ -1936,8 +1936,9 @@ murd.BANK_SINK = engine.MakeObject({
 });
 
 murd.BANK_SOAP = engine.MakeObject({
-  NAME: "soap",
+  NAME: "bank-soap",
   TITLE: "soap",
+  ALIASES: ["soap"],
   INITIAL_LOCATION: murd.BANK_SINK,
   Use: function(world, onWhat) {
     murd.BANK_SINK.Use(world, onWhat);
@@ -2041,23 +2042,72 @@ murd.PIZZERIA_SINK = engine.MakeObject({
       world.Print(pickRandomMessage([
           "Hmm, nah, my hands are already clean.",
           "I'd rather not touch it with my clean hands."]));
-    } else if (!murd.PIZZERIA_RESTROOM.warnedFilthy) {
-      murd.PIZZERIA_RESTROOM.warnedFilthy = true;
-      world.Print("It looks very disgusting. "
-                  + "Not sure touching the knob is a good idea. Hmm. "
-                  + "Maybe not.");
     } else {
+      murd.PIZZERIA_SOAP.Use(world, null);
+    }
+  },
+  CanGet: function(world) {
+    world.Print("Hmm, no, thanks, that's very dirty.");
+    return false;
+  },
+});
+
+murd.PIZZERIA_SOAP = engine.MakeObject({
+  NAME: "pizzeria-soap",
+  TITLE: "a bar of soap",
+  INITIAL_LOCATION: murd.PIZZERIA_SINK,
+  ALIASES: ["soap"],
+  Detail: function(world) {
+    var description = "A bar of clean soap.";
+    if (world.location == murd.PIZZERIA_RESTROOM) {
+      description += " It appears to be the only thing that's clean here.";
+    } else {
+      description += " It is a bit slippery.";
+    }
+    return description;
+  },
+  Use: function(world, onWhat) {
+    if (onWhat == murd.TESSINERPLATZ_FOUNTAIN) {
+      if (world.GetFlag(murd.flags.hasCleanHands)) {
+        world.Print("Your hands are already clean.");
+        return;
+      }
+      world.Print("You wash your hands with the soap until they are spotless. "
+          + "The soap dissolves in the water. Your hands are now clean.");
+      murd.PIZZERIA_SINK.Add(murd.PIZZERIA_SOAP);
+      world.SetFlag(murd.flags.hasCleanHands, true);
+      return;
+    }
+    if (world.location == murd.PIZZERIA_RESTROOM) {
+      if (world.GetFlag(murd.flags.hasCleanHands)) {
+        world.Print("Your hands are already clean.");
+        return;
+      }
       murd.PIZZERIA_RESTROOM.hasUsedSink = true;
       world.Print("You open the knob and a frail stream of water trails down, "
                   + "like tears. You wash your hands as well as you can, which "
                   + "is not that good, but ... shrug, better than nothing. "
                   + "Your hands are now (mostly) clean.");
       world.SetFlag(murd.flags.hasCleanHands, true);
+      return;
     }
+    if (onWhat == null) {
+      world.Print("You'd need some water to use the soap.");
+      return;
+    }
+    world.Print("That makes no sense.");
   },
   CanGet: function(world) {
-    world.Print("Hmm, no, thanks, that's very dirty.");
-    return false;
+    if (!murd.TESSINERPLATZ.hasUsedFountain) {
+      world.Print("No. Why would you steal this soap?");
+      return false;
+    }
+    if (world.GetFlag(murd.flags.hasCleanHands)) {
+      world.Print("You have no use for it: your hands are already clean.");
+      return false;
+    }
+    world.Print("It is exactly what I need!");
+    return true;
   },
 });
 
@@ -2458,6 +2508,7 @@ murd.Game.prototype.OBJECTS = [
 
   murd.PIZZA,
   murd.PIZZERIA_SINK,
+  murd.PIZZERIA_SOAP,
   murd.PIZZERIA_GERMS,
   murd.PIZZERIA_FLOOR,
   murd.PIZZERIA_VOMIT,
