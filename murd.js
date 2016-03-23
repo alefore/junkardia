@@ -112,18 +112,31 @@ murd.DREAM = engine.MakeRoom({
     if (parsed.MatchAny([
             {verb: /fight/, entities: [murd.DREAM_MONSTER], },
             {verb: /fight/, entities: [], modifiers: []},])) {
-      if (murd.DREAM_SPOON.location == world.INVENTORY) {
-        world.Print(
-            "You try to fight the monster armed with nothing but the "
-            + "unremarkable spoon and a lot of courage. It's pointless: "
-            + "The monster eats you.");
-        this.playerAlive = false;
-        world.Enter(murd.BEDROOM);
-        return true;
-      }
-      world.Print("Fighting the monster barehand? That's crazy! No way!");
+      world.Print("I need something to fight the monster with.");
       return true;
     }
+    if (parsed.MatchAny([
+            {verb: /fight/, entities: [murd.DREAM_MONSTER, murd.DREAM_SPOON],
+             modifiers: [/.*/, /with/]},
+            {verb: /fight/, entities: [murd.DREAM_SPOON],
+             modifiers: [/with/]},])) {
+      world.Print(
+          "You try to fight the monster armed with nothing but the "
+          + "unremarkable spoon and a lot of courage. It's pointless: "
+          + "The monster eats you.");
+      this.playerAlive = false;
+      world.Enter(murd.BEDROOM);
+      return true;
+    }
+    if (parsed.MatchAny([
+            {verb: /fight/, entities: [murd.DREAM_MONSTER, engine.ANY_OBJECT],
+             modifiers: [/.*/, /with/]},
+            {verb: /fight/, entities: [murd.ANY_OBJECT],
+             modifiers: [/with/]},])) {
+      world.Print("That probably wouldn't work.");
+      return true;
+    }
+
     if (parsed.Match({verb: /open|check/, entities: [murd.DREAM_MAILBOX]})) {
       world.Print(murd.DREAM_MAILBOX.Detail(world));
       return true;
