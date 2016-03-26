@@ -52,25 +52,22 @@ engine.World.prototype.LocateEntity = function(words) {
 };
 
 engine.World.prototype.LocateRoom = function(words) {
-  var exitNames = this.location.Exits(this);
-  var exits = [];
-
   // First look for an exact name match.
   for (var i in this.game.ROOMS) {
-    room = this.game.ROOMS[i];
+    var room = this.game.ROOMS[i];
     if (room.NAME == words[0]) {
       return room;
-    }
-    if (room.NAME in exitNames) {
-      exits.push(room);
     }
   }
 
   // Look for aliases in exits.
+  var exits = this.location.Exits(this);
   var matches = [];
   for (var i in exits) {
-    room = exits[i];
-    if (room.ALIASES.indexOf(words[0]) >= 0) {
+    var exit = exits[i]
+    room = exits[i].TO;
+    if (exit.ALIASES.indexOf(words[0]) >= 0 ||
+        room.ALIASES.indexOf(words[0]) >= 0) {
       matches.push(room);
     }
   }
@@ -191,7 +188,15 @@ engine.World.prototype.Enter = function(room) {
     return;
   }
 
-  if (!(room.NAME in this.location.Exits(this))) {
+  var exits = this.location.Exits(this);
+  var exit = null;
+  for (var i in exits) {
+    if (exits[i].TO === room) {
+      exit = exits[i];
+    }
+  }
+
+  if (exit == null) {
     this.game.NoExit(this, room);
     return;
   }
@@ -203,6 +208,9 @@ engine.World.prototype.Enter = function(room) {
   if (!room.CanEnter(this)) {
     return;
   }
+
+  // Execute custom code for this transition.
+  exit.Transition(this);
 
   this.location = room;
   this.location.visited = true;
@@ -489,13 +497,11 @@ engine.Room.prototype.visited = false;
 engine.Room.prototype.CanLeave = function(world, toRoom) {
   return true;
 };
-
 engine.Room.prototype.CanEnter = function(world) {
   return true;
 };
-
 engine.Room.prototype.Exits = function(world) {
-  return {};
+  return [];
 };
 engine.Room.prototype.HandleAction = function(world, parsed) {
   return false;
@@ -503,6 +509,18 @@ engine.Room.prototype.HandleAction = function(world, parsed) {
 
 engine.MakeRoom = function(data) {
   return engine.MakeEntity(engine.Room, data);
+};
+
+engine.Exit = function() {
+  engine.Entity.call(this);
+};
+engine.Exit.prototype = new engine.Entity();
+engine.Exit.prototype.constructor = engine.Exit;
+engine.Exit.prototype.TO = null;
+engine.Exit.prototype.Transition = function(world) {};
+
+engine.MakeExit = function(data) {
+  return engine.MakeEntity(engine.Exit, data);
 };
 
 engine.Object = function() {

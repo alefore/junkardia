@@ -148,9 +148,11 @@ murd.DREAM = engine.MakeRoom({
     murd.DREAM_POSTCARD.dropIfHeld(world);
     return true;
   },
-  Exits: function() {
-    var output = {};
-    if (!this.playerAlive) { output["bedroom"] = true; }
+  Exits: function(world) {
+    var output = [];
+    if (!this.playerAlive) {
+      output = [engine.MakeExit({TO: murd.BEDROOM})];
+    }
     return output;
   }
 });
@@ -266,7 +268,10 @@ murd.BEDROOM = engine.MakeRoom({
   },
 
   Exits: function(world) {
-    return {"home-restroom": true, "brupbacherplatz": true}
+    return [
+      engine.MakeExit({TO: murd.RESTROOM}),
+      engine.MakeExit({TO: murd.BRUPBACHERPLATZ}),
+    ];
   },
 });
 
@@ -325,7 +330,9 @@ murd.RESTROOM = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"bedroom": true}
+    return [
+      engine.MakeExit({TO: murd.BEDROOM, ALIASES: ['out', 'outside']}),
+    ];
   },
   HandleAction: function(world, parsed) {
     if (isShowerCommand(parsed)) {
@@ -374,7 +381,11 @@ murd.BRUPBACHERPLATZ = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"bedroom": true, "wiedikon": true, "bar": true};
+    return [
+      engine.MakeExit({TO: murd.BEDROOM}),
+      engine.MakeExit({TO: murd.WIEDIKON}),
+      engine.MakeExit({TO: murd.BAR}),
+    ];
   }
 });
 
@@ -423,7 +434,8 @@ function DescriptionTrainLines(room) {
 
 function ExitsTrainLines(room, exits) {
   room.TrainLines().forEach(
-      function(r) { exits[r.NAME.toLowerCase()] = true; });
+      function(r) { exits.push(engine.MakeExit({TO: r}))}
+  );
   return exits;
 }
 
@@ -501,7 +513,9 @@ murd.WIEDIKON = engine.MakeRoom({
     return false;
   },
   Exits: function(world) {
-    return ExitsTrainLines(murd.WIEDIKON, {"brupbacherplatz": true});
+    return ExitsTrainLines(murd.WIEDIKON, [
+        engine.MakeExit({TO: murd.BRUPBACHERPLATZ}),
+    ]);
   }
 });
 
@@ -560,7 +574,9 @@ murd.ENGE = engine.MakeRoom({
     return false;
   },
   Exits: function(world) {
-    return ExitsTrainLines(murd.ENGE, {"tessinerplatz": true});
+    return ExitsTrainLines(murd.ENGE, [
+        engine.MakeExit({TO: murd.TESSINERPLATZ}),
+    ]);
   }
 });
 
@@ -621,7 +637,11 @@ murd.TESSINERPLATZ = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"enge": true, "reception": true, "pizzeria": true};
+    return [
+      engine.MakeExit({TO: murd.ENGE}),
+      engine.MakeExit({TO: murd.BANK_RECEPTION, ALIASES: ['bank']}),
+      engine.MakeExit({TO: murd.PIZZERIA}),
+    ];
   }
 });
 
@@ -669,7 +689,11 @@ murd.BANK_RECEPTION = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"lift": true, "tessinerplatz": true, "stairs-1": true};
+    return [
+      engine.MakeExit({TO: murd.BANK_LIFT}),
+      engine.MakeExit({TO: murd.TESSINERPLATZ, ALIASES: ['out', 'outside']}),
+      engine.MakeExit({TO: murd.STAIRS_1}),
+    ];
   }
 });
 
@@ -756,16 +780,26 @@ murd.BANK_LIFT = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    var output = {};
+    var output = [];
     if (this.floor == 0) {
-      output["reception"] = true;
+      output.push(engine.MakeExit({
+        TO: murd.BANK_RECEPTION, ALIASES: ['out', 'outside'],
+      }));
     } else if (this.floor == 1) {
     } else if (this.floor == 2) {
-      output["bank-2-office"] = true;
-      output["bank-2-toilet"] = true;
+      output.push(engine.MakeExit({
+        TO: murd.BANK_2_OFFICE, ALIASES: ['out', 'outside'],
+      }));
+      output.push(engine.MakeExit({
+        TO: murd.BANK_2_TOILET,
+      }));
     } else if (this.floor == 3) {
-      output["bank-3-office"] = true;
-      output["bank-3-toilet"] = true;
+      output.push(engine.MakeExit({
+        TO: murd.OFFICE, ALIASES: ['out', 'outside'],
+      }));
+      output.push(engine.MakeExit({
+        TO: murd.BANK_TOILET,
+      }));
     }
     return output;
   },
@@ -852,7 +886,10 @@ murd.BANK_2_OFFICE = engine.MakeRoom({
     }
   },
   Exits: function(world) {
-    return {"lift": true, "bank-2-toilet": true};
+    return [
+      engine.MakeExit({TO: murd.BANK_LIFT}),
+      engine.MakeExit({TO: murd.BANK_2_TOILET}),
+    ];
   }
 });
 
@@ -877,7 +914,10 @@ murd.BANK_2_TOILET = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"lift": true, "bank-2-office": true};
+    return [
+      engine.MakeExit({TO: murd.BANK_LIFT}),
+      engine.MakeExit({TO: murd.BANK_2_OFFICE, ALIASES: ['out', 'outside']}),
+    ];
   }
 });
 
@@ -950,7 +990,11 @@ murd.OFFICE = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"lift": true, "bank-3-toilet": true, "stairs-1": true};
+    return [
+      engine.MakeExit({TO: murd.BANK_LIFT}),
+      engine.MakeExit({TO: murd.BANK_TOILET}),
+      engine.MakeExit({TO: murd.STAIRS_1}),
+    ];
   }
 });
 
@@ -977,7 +1021,11 @@ murd.BANK_TOILET = engine.MakeRoom({
   },
   CanLeave: CanLeaveOfficeFloor,
   Exits: function(world) {
-    return {"lift": true, "bank-3-office": true, "stairs-1": true};
+    return [
+      engine.MakeExit({TO: murd.BANK_LIFT}),
+      engine.MakeExit({TO: murd.OFFICE, ALIASES: ['out', 'outside']}),
+      engine.MakeExit({TO: murd.STAIRS_1}),
+    ];
   },
 });
 
@@ -1037,7 +1085,10 @@ murd.STAIRS_1 = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"bank-3-office": true, "reception": true};
+    return [
+      engine.MakeExit({TO: murd.OFFICE, ALIASES: ['upstairs']}),
+      engine.MakeExit({TO: murd.BANK_RECEPTION, ALIASES: ['downstairs']}),
+    ];
   },
 });
 
@@ -1121,7 +1172,10 @@ murd.PIZZERIA = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    return {"tessinerplatz": true, "pizzeria-restroom": true};
+    return [
+      engine.MakeExit({TO: murd.TESSINERPLATZ}),
+      engine.MakeExit({TO: murd.PIZZERIA_RESTROOM}),
+    ];
   },
 });
 
@@ -1157,7 +1211,9 @@ murd.PIZZERIA_RESTROOM = engine.MakeRoom({
     return out;
   },
   Exits: function(world) {
-    return {"pizzeria": true};
+    return [
+      engine.MakeExit({TO: murd.PIZZERIA, ALIASES: ['out', 'outside']}),
+    ];
   },
   CanLeave: function(world, toRoom) {
     var description = "You turn the knob and leave the disgusting restroom.";
