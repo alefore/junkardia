@@ -1579,6 +1579,14 @@ murd.LINT = engine.MakeObject({
   Detail: function(world) {
     return "Maybe you should consider buying new pants."
   },
+  HandleAction: function(world, parsed) {
+    if (parsed.Match({verb: /lick/, entities: [this]})) {
+      world.Print("It tastes funny, but not \"ha-ha\" funny. " + 
+          "Why would anyone <strong>lick</strong> pocket lint, honestly?");
+      return true;
+    }
+    return false;
+  },
   Use: function(world, onWhat) {
     if (this.location != world.INVENTORY) {
       world.game.NotHave(world, this);

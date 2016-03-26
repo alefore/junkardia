@@ -328,6 +328,16 @@ engine.World.prototype.InitActions = function() {
   };
 };
 engine.World.prototype.HandleAction = function(parsed) {
+  if (parsed.entities.length > 0 &&
+      parsed.entities[0] instanceof engine.Object) {
+    var obj = parsed.entities[0];
+    if (this.INVENTORY.IsReachable(obj) || this.location.IsReachable(obj)) {
+      if (obj.HandleAction(this, parsed)) {
+        return true;
+      }
+    }
+  }
+
   if (this.location.HandleAction(this, parsed)) {
     return true;
   }
@@ -474,6 +484,9 @@ engine.Entity.prototype.GetReachableObjects = function() {
 engine.Entity.prototype.DescribeContents = function(world, objects) {
   return objects;
 };
+engine.Entity.prototype.HandleAction = function(world, parsed) {
+  return false;
+};
 
 engine.MakeEntity = function(superclass, data) {
   var newClass = function() {
@@ -502,9 +515,6 @@ engine.Room.prototype.CanEnter = function(world) {
 };
 engine.Room.prototype.Exits = function(world) {
   return [];
-};
-engine.Room.prototype.HandleAction = function(world, parsed) {
-  return false;
 };
 
 engine.MakeRoom = function(data) {
