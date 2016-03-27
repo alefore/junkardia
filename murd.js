@@ -196,7 +196,7 @@ murd.BEDROOM = engine.MakeRoom({
     }
     for (var i in objects) {
       var obj = objects[i];
-      if (obj == murd.BED || obj == murd.NIGHTSTAND) {
+      if (obj == murd.NIGHTSTAND) {
         continue;  // Already explicitly mentioned.
       }
       out.push(obj)
@@ -1518,7 +1518,7 @@ murd.ALARM_CLOCK = engine.MakeObject({
   }
 });
 
-murd.BED = engine.MakeObject({
+murd.BED = engine.MakeFixedObject({
   NAME: "bedroom-bed",
   TITLE: "a comfortable bed",
   INITIAL_LOCATION: murd.BEDROOM,

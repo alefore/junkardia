@@ -117,8 +117,10 @@ engine.World.prototype.DescribeContents = function(container) {
   var objects = container.objects;
   objects = container.DescribeContents(this, objects);
   for (var i in objects) {
-    var obj = objects[i];
-    this.Print(obj.Overview(this));
+    var overview = objects[i].Overview(this);
+    if (overview) {
+      this.Print(overview);
+    }
   }
 };
 
@@ -370,7 +372,7 @@ engine.Engine.prototype.ProcessAction = function(action) {
   this.Print('<div class="msg"><article class="command">'
       + action + '</article></div>', true);
   this.Print('<div class="msg"><article class="reply">', true);
-  var words = action.toLowerCase().split(/\s+/);
+  var words = action.trim().toLowerCase().split(/\s+/);
   var verb = words.shift();
   var parsed = this.ParseAction(this.world, verb, words);
   if (parsed === null) {
@@ -548,6 +550,25 @@ engine.Object.prototype.Use = function(world, onWhat) {
 };
 engine.MakeObject = function(data) {
   return engine.MakeEntity(engine.Object, data);
+};
+engine.MakeFixedObject = function(data) {
+  var d = {
+    CanGet: function(world) {
+      world.Print('You can\'t.');
+      return false;
+    },
+    Overview: function(world) {
+      // We assume that the overview is in the room description.
+      return '';
+    },
+    Detail: function(world) {
+      return 'You see ' + this.TITLE + ' here.';
+    },
+  };
+  for (var i in data) {
+    d[i] = data[i];
+  }
+  return engine.MakeObject(d);
 };
 
 engine.Game = function() {};
