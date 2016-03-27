@@ -16,6 +16,7 @@ html, body {
 }
 pre {
   font-family: Monaco, monospace;
+  font-size: 0.7em;
 }
 #main {
   background: #eee;
