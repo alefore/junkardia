@@ -1834,8 +1834,6 @@ murd.BANK_PALM_TREE = engine.MakeObject({
   NAME: "palm",
   TITLE: "a palm tree",
   INITIAL_LOCATION: murd.BANK_RECEPTION,
-  // TODO: Figure out why "tree" isn't working here. Probably some bug with the
-  // handling of aliases?
   ALIASES: ["tree", "palm-tree", "palmtree", "palm tree"],
   Detail: function(world) {
     return "A somewhat pretty but ultimately unremarkable palm tree, in a big "
