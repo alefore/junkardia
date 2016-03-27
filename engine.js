@@ -37,18 +37,59 @@ engine.World.prototype.Init = function(game) {
       game.INTRO + '</article></div>', true);
 };
 
+engine.World.prototype.LargestMatch = function(words, entities) {
+  var largestMatch = null;
+  var largestMatchSize = 0;
+  for (var i in entities) {
+    var entity = entities[i];
+    var matchSize = entity.MatchWords(words);
+    if (matchSize > largestMatchSize) {
+      largestMatch = entity;
+      largestMatchSize = matchSize;
+    }
+  }
+  return {match: largestMatch, matchSize: largestMatchSize};
+}
+
 engine.World.prototype.LocateEntity = function(words) {
   if (words[0] === 'the') {
     words.shift();
   }
-  var entity = this.LocateObject(words);
-  if (entity == null) {
-    entity = this.LocateRoom(words);
+
+  // Look for aliases in the inventory.
+  var m = this.LargestMatch(words, this.INVENTORY.GetReachableObjects());
+  if (m.match !== null) {
+    words.splice(0, m.matchSize);
+    return m.match;
   }
-  if (entity != null) {
-    words.shift();
+
+  // Look for aliases in the current room.
+  var m = this.LargestMatch(words, this.location.GetReachableObjects());
+  if (m.match !== null) {
+    words.splice(0, m.matchSize);
+    return m.match;
   }
-  return entity;
+
+  // Look for aliases in the exits.
+  var exits = this.location.Exits(this);
+  var m = this.LargestMatch(words, exits);
+  if (m.match !== null) {
+    words.splice(0, m.matchSize);
+    return m.match.TO;
+  }
+  var rooms = [this.location];
+  for (var i in exits) {
+    rooms.push(exits[i].TO);
+  }
+  var m = this.LargestMatch(words, rooms);
+  if (m.match !== null) {
+    words.splice(0, m.matchSize);
+    return m.match;
+  }
+
+  // This is limited to reachable rooms and objects.
+  // Should we search the rest?
+  return null;
 };
 
 engine.World.prototype.LocateRoom = function(words) {
@@ -88,7 +129,6 @@ engine.World.prototype.LocateRoom = function(words) {
     return matches[0];
   }
 
-  // TODO(bubble): Handle ambiguity.
   return null;
 };
 
@@ -487,10 +527,52 @@ engine.Entity.prototype.DescribeContents = function(world, objects) {
 engine.Entity.prototype.HandleAction = function(world, parsed) {
   return false;
 };
+engine.AliasNode = function() {
+  this.aliasTree = {};
+  this.terminal = false;
+};
+engine.AliasNode.prototype.Add = function(words) {
+  if (words.length <= 0) {
+    this.terminal = true;
+    return;
+  }
+  var word = words[0];
+  if (!(word in this.aliasTree)) {
+    this.aliasTree[word] = new engine.AliasNode();
+  }
+  this.aliasTree[word].Add(words.slice(1));
+};
+engine.AliasNode.prototype.Match = function(words) {
+  var baseValue = this.terminal ? 1 : 0;
+  if (words.length <= 0) {
+    return baseValue;
+  }
+  var word = words[0];
+  if (!(word in this.aliasTree)) {
+    return baseValue;
+  }
+  return baseValue + this.aliasTree[word].Match(words.slice(1));
+};
+engine.Entity.prototype.BuildAliasTree = function() {
+  this.aliasRoot = new engine.AliasNode();
+  for (var i in this.ALIASES) {
+    var alias = this.ALIASES[i];
+    var words = alias.toLowerCase().split(/\s+/);
+    this.aliasRoot.Add(words);
+  }
+  if (this.NAME !== null) {
+    var words = this.NAME.toLowerCase().split(/\s+/);
+    this.aliasRoot.Add(words);
+  }
+};
+engine.Entity.prototype.MatchWords = function(words) {
+  return this.aliasRoot.Match(words);
+};
 
 engine.MakeEntity = function(superclass, data) {
   var newClass = function() {
     this.Init();
+    this.BuildAliasTree();
     superclass.call(this);
   };
   newClass.prototype = new superclass();

@@ -196,20 +196,10 @@ murd.BEDROOM = engine.MakeRoom({
     }
     for (var i in objects) {
       var obj = objects[i];
-      if (obj == murd.ALARM_CLOCK) {
-        // Either explicitly mentioned or the player already interacted with it.
-        continue;
-      }
       if (obj == murd.BED || obj == murd.NIGHTSTAND) {
         continue;  // Already explicitly mentioned.
       }
-      if (obj == murd.WALLET) {
-        if (!this.alarmClockOn) {
-          world.Print("Your wallet lies on your nightstand.");
-        }
-      } else {
-        out.push(obj)
-      }
+      out.push(obj)
     }
     return out;
   },
@@ -1504,6 +1494,7 @@ murd.NIGHTSTAND = engine.MakeObject({
 murd.ALARM_CLOCK = engine.MakeObject({
   NAME: "clock",
   TITLE: "an alarm clock that's beeping loudly",
+  ALIASES: ['alarm', 'alarm clock'],
   INITIAL_LOCATION: murd.NIGHTSTAND,
   Use: function(world, onWhat) {
     if (!murd.BEDROOM.alarmClockOn) {
