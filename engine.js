@@ -370,11 +370,11 @@ engine.Engine.prototype.Action = function() {
 };
 
 engine.Engine.prototype.ProcessAction = function(action) {
-  if (action === '$rec') {
+  if (action === '/rec') {
     this.StartRecording();
     return;
   } 
-  if (action === '$stoprec') {
+  if (action === '/stoprec') {
     this.StopRecording();
     return;
   }
