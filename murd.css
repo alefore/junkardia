@@ -18,6 +18,15 @@ pre {
   font-family: Monaco, monospace;
   font-size: 0.7em;
 }
+#recording {
+  padding: 0px 7px;
+  font-size: 0.8em;
+  display: none;
+}
+#ball {
+  font-size: 1.5em;
+  color: red;
+}
 #main {
   background: #eee;
   display: flex;

@@ -305,6 +305,7 @@ engine.Engine.prototype.Start = function(game) {
   this.screen_.innerHTML = '';
   this.screenBuffer_ = '';
   this.game = game;
+  this.recording = false;
   this.world = new engine.World(this);
   this.world.Init(game);
   this.Flush();
@@ -369,6 +370,17 @@ engine.Engine.prototype.Action = function() {
 };
 
 engine.Engine.prototype.ProcessAction = function(action) {
+  if (action === '$rec') {
+    this.StartRecording();
+    return;
+  } 
+  if (action === '$stoprec') {
+    this.StopRecording();
+    return;
+  }
+  if (this.recording) {
+    this.RecordAction(action);
+  }
   this.Print('<div class="msg"><article class="command">'
       + action + '</article></div>', true);
   this.Print('<div class="msg"><article class="reply">', true);
@@ -393,6 +405,24 @@ engine.Engine.prototype.ProcessAction = function(action) {
   }
   this.actionIndex = this.actionHistory.length;
   this.input_.focus();
+};
+
+engine.Engine.prototype.StartRecording = function() {
+  this.recording = true;
+  document.getElementById('recording').style.display = 'block';
+};
+
+engine.Engine.prototype.StopRecording = function() {
+  this.recording = false;
+  document.getElementById('recording').style.display = 'none';
+};
+
+engine.Engine.prototype.RecordAction = function(action) {
+  req = new XMLHttpRequest();
+  req.open('POST', 'https://docs.google.com/forms/d/' + 
+      '1lA2zFDOPsvBFqbnKtbtApLFq3GxwKnuYb3JdvF4VuJo/formResponse', true);
+  req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+  req.send('entry.222425830=' + encodeURIComponent(action));
 };
 
 engine.Entity = function() {
