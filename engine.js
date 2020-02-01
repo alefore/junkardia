@@ -305,7 +305,7 @@ engine.Engine.prototype.Start = function(game) {
   this.screen_.innerHTML = '';
   this.screenBuffer_ = '';
   this.game = game;
-  this.recording = true;
+  this.recording = false;
   this.world = new engine.World(this);
   this.world.Init(game);
   this.Flush();
