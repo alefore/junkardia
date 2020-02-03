@@ -144,7 +144,15 @@ murd.CONTROL_ROOM = engine.MakeRoom({
       return true;
     }
     if (parsed.Match({verb: /smile/})) {
-      world.Print("You smile into the void.");
+      world.Print("You smile into the void. You feel lonely.");
+      return true;
+    }
+    if (parsed.Match({verb: /fly/})) {
+      if (murd.CONTROL_ROOM.landed) {
+        world.Print("We just landed, it's not the time to take off!");
+      } else {
+        world.Print("We're already flying, directly towards Junkardia!");
+      }
       return true;
     }
     return false;
@@ -221,10 +229,15 @@ murd.JUNKARDIA = engine.MakeRoom({
       }
       return true;
     }
+    if (parsed.Match({verb: /fly/})) {
+      world.Print("You don't have any wings. Oh, you mean in the Eliza? No "
+          + "way, I can't leave until I have some loot.");
+      return true;
+    }
     if (parsed.Match({verb: /smile/})) {
       world.Print(this.robot_on
                       ? "You smile. The robot smiles back."
-                      : "You smile into the void.");
+                      : "You smile into the void. The bird caws.");
       return true;
     }
     return false;
@@ -759,7 +772,7 @@ murd.CONTROL_ROOM_SPACE_SUIT = MakeClothes({
   NAME: "spacesuit",
   TITLE: "your space suit",
   // TODO: Get rid of `space`.
-  ALIASES: ["space", "space suit"],
+  ALIASES: ["space", "space suit", "suit"],
   INITIAL_LOCATION: murd.CONTROL_ROOM_CLOSET,
   Detail: function(world) {
     return (this.location == world.INVENTORY
@@ -843,6 +856,94 @@ murd.CONTROL_ROOM_DOOR = MakeFixedObject({
   },
 });
 
+murd.JUNKARDIA_TREE = MakeObject({
+  NAME: "tree",
+  TITLE: "a dead tree",
+  INITIAL_LOCATION: murd.JUNKARDIA,
+  Detail: function(world) {
+    return ("The tree reaches out into the sky but it has dried out: it has no "
+        + "leaves. "
+        + (murd.JUNKARDIA_BIRD.location == this
+               ? "A black bird with shiny feathers is standing on it."
+               : "Maybe trees in Junkardia have no leaves?"));
+  },
+  Use: function(world) {
+    world.Print("I have no use for the tree at this moment.");
+    return true;
+  },
+  CanGet: function(world) {
+    world.Print("The tree is fixed to the ground... and probably too heavy.");
+    return false;
+  },
+  HandleAction: function(world, parsed) {
+    if (parsed.Match({verb: /climb/, entities: [this]})) {
+      world.Print("You walk to the tree, wrap you arms around it and try to "
+          + "climb up but ... you don't get very far. Your feet remain firmly "
+          + "on the ground.");
+      return true;
+    }
+    return false;
+  },
+});
+
+murd.JUNKARDIA_BIRD = MakeFixedObject({
+  NAME: "bird",
+  TITLE: "a bird",
+  INITIAL_LOCATION: murd.JUNKARDIA_TREE,
+  DescribeLocation: function() {
+    if (this.location == murd.JUNKARDIA_TREE) {
+      return "the tree";
+    } else if (this.location == murd.JUNKARDIA_SHIP) {
+      return "the Eliza";
+    } else {
+      return "the mountain of garbage";
+    }
+  },
+  Detail: function(world) {
+    var looking = "";
+    if (murd.JUNKARDIA.turret_active) {
+      looking = "the Base2XL inquisitively";
+    } else {
+      looking = "you";
+    }
+    return ("The black bird has a long beak and dark eyes. "
+        + "The bird is standing on top of " + this.DescribeLocation()
+        + " looking at " + looking + ".");
+  },
+  Use: function(world, onWhat) {
+    world.Print("I have no use for the bird right now.");
+    return true;
+  },
+  SwitchLocation() {
+    if (this.location == murd.JUNKARDIA_TREE) {
+      murd.JUNKARDIA_SHIP.Add(this);
+    } else {
+      murd.JUNKARDIA_TREE.Add(this);
+    }
+  },
+  CanGet: function(world) {
+    this.SwitchLocation();
+    world.Print("As you approach the bird, it flies away to "
+        + this.DescribeLocation() + ".");
+    return false;
+  },
+  HandleAction: function(world, parsed) {
+    if (parsed.Match({verb: /feed/, entities: [this, engine.ANY_OBJECT]})) {
+      world.Print("The bird won't eat that.");
+      return true;
+    }
+    if (parsed.Match({verb: /feed/, entities: [this]})) {
+      world.Print("I have nothing to feed the bird.");
+      return true;
+    }
+    if (parsed.Match({verb: /catch|hunt|capture/, entities: [this]})) {
+      world.Get(this);
+      return true;
+    }
+    return false;
+  },
+});
+
 murd.GARBAGE = MakeFixedObject({
   NAME: "garbage",
   TITLE: "a pile of garbage",
@@ -854,6 +955,61 @@ murd.GARBAGE = MakeFixedObject({
   CanGet: function(world) {
     world.Print("What parts of the garbage?");
     return false;
+  },
+});
+
+murd.GARBAGE_BRICK = MakeObject({
+  NAME: "brick",
+  TITLE: "a brick",
+  INITIAL_LOCATION: murd.GARBAGE,
+  Detail: function(world) {
+    return "It is just a plain brick.";
+  },
+  CanGet: function(world) {
+    world.Print("It's a bit heavy, I'd rather leave it here.");
+    return false;
+  },
+  Use: function(world, onWhat) {
+    if (onWhat == murd.GARBAGE_BOTTLE) {
+      world.Print("You smash the bottle with the brick."
+          + (murd.CONTROL_ROOM.music_playing ? " " + Awesome() + "!" : ""));
+      if (murd.GARBAGE_BOTTLE_LABEL.location == murd.GARBAGE_BOTTLE) {
+        murd.GARBAGE.Add(murd.GARBAGE_BOTTLE_LABEL);
+      }
+      world.Destroy(murd.GARBAGE_BOTTLE);
+      murd.GARBAGE.Add(murd.GARBAGE_BOTTLE_GLASS);
+    } else if (onWhat == murd.JUNKARDIA_BIRD) {
+      if (murd.JUNKARDIA_BIRD.location == murd.JUNKARDIA_SHIP) {
+        world.Print("No way you're going to throw the brick to the bird when "
+            + "it's standing on your ship! You don't want to scratch the "
+            + "Eliza.");
+        return true;
+      }
+      murd.JUNKARDIA_BIRD.SwitchLocation();
+      world.Print("You take the bridge and hurl it towards the bird but you "
+          + "miss. The bird flies to "
+          + murd.JUNKARDIA_BIRD.DescribeLocation() + ".");
+      return true;
+    } else if (onWhat == murd.GARBAGE_ROBOT) {
+      if (murd.JUNKARDIA.robot_on) {
+        world.Print("No way, that would be incredibly rude!");
+      } else {
+        world.Print("No, I don't want to damage it.");
+      }
+      return true;
+    } else if (onWhat == murd.JUNKARDIA_SHIP) {
+      world.Print("The ship doesn't need any bricks. It's built out of solid "
+          + "wobium.");
+    } else if (onWhat == murd.JUNKARDIA_SHIP_BATTERY) {
+      world.Print("Uh... What?");
+    } else if (onWhat == murd.JUNKARDIA_TREE) {
+      world.Print("There's no point.");
+    } else if (onWhat != null) {
+      world.Print("I don't see the point of that.");
+    } else {
+      world.Print("On what? Hmm.");
+    }
+    return true;
   },
 });
 
@@ -885,7 +1041,7 @@ murd.GARBAGE_ROBOT = MakeObject({
         + "You give up.");
     return false;
   },
-  Use:function(world, onWhat) {
+  Use: function(world, onWhat) {
     if (!murd.JUNKARDIA.robot_on) {
       this.TurnOn(world);
       return true;
@@ -1064,7 +1220,7 @@ murd.GARBAGE_BOTTLE = MakeObject({
 
 murd.GARBAGE_BOTTLE_LABEL = MakeObject({
   NAME: "label",
-  TITLE: "the wine label",
+  TITLE: "a wine label",
   // TODO: Remove 'wine'.
   ALIASES: ["wine", "wine label"],
   INITIAL_LOCATION: murd.GARBAGE_BOTTLE,
@@ -1083,10 +1239,30 @@ murd.GARBAGE_BOTTLE_LABEL = MakeObject({
       return true;
     }
     if (parsed.Match({verb:/read/, entities: [this]})) {
-      world.Print("You can't read this alphabet. If you had to guess, you'd "
+      world.Print("You can't read the alphabet on this wine label. "
+          + "If you had to guess, you'd "
           + "say it's probably the writing of the Bora society.");
       return true;
     }
+    return false;
+  },
+});
+
+murd.GARBAGE_BOTTLE_GLASS = MakeObject({
+  NAME: "glass",
+  TITLE: "some broken glass ",
+  ALIASES: ["broken", "broken glass"],
+  INITIAL_LOCATION: null,
+  Detail: function(world) {
+    return "There are many small pieces of glass here. They once were a "
+        + "bottle.";
+  },
+  Use: function(world, onWhat) {
+    world.Print("You have no use for the broken glass.");
+    return true;
+  },
+  CanGet: function(world) {
+    world.Print("Hmm, nah, I don't want to do that... I could cut my fingers.");
     return false;
   },
 });
@@ -1177,8 +1353,11 @@ murd.JUNKARDIA_SHIP = MakeFixedObject({
     return "The Eliza, your ship, is standing here, peacefully, over a"
         + " wonderful pile of garbage."
         + (murd.JUNKARDIA.turret_active
-               ? " The Base2XL is standing close to it, scanning the territory."
-               : " The Base2XL is still attached to it, inactive.");
+               ? ""
+               : " The Base2XL is still attached to the Eliza, inactive.")
+        + (murd.JUNKARDIA_BIRD.location == this
+               ? " A big black bird is standing on top of the Eliza."
+               : "");
   },
   Use: function(world, onWhat) {
     world.Print(
@@ -1196,10 +1375,11 @@ murd.JUNKARDIA_SHIP_BATTERY = MakeFixedObject({
   Detail: function(world) {
     var description = "The battery of the Eliza is your main source of power. ";
     if (murd.JUNKARDIA.turret_active && murd.JUNKARDIA.robot_powered) {
-      description += "The battery is currently powering the Base2XL and the "
-          + "garbage robot. ";
+      description += "The battery is currently powering the "
+          + "Base2XL and the garbage robot. ";
     } else if (murd.JUNKARDIA.turret_active) {
-      description += "The battery is currently powering the Base2XL. ";
+      description += "The battery is currently powering the "
+          + "Base2XL. ";
     } else if (murd.JUNKARDIA.robot_powered) {
       description += "The battery is currently powering the "
           + "garbage robot. ";
@@ -1224,15 +1404,39 @@ murd.JUNKARDIA_SHIP_BATTERY = MakeFixedObject({
       murd.JUNKARDIA.robot_powered = true;
       return true;
     }
-    world.Print("I don't understand.");
+    if (onWhat == murd.DEFENSE_TURRET) {
+      if (murd.JUNKARDIA.turret_active) {
+        world.Print("The battery is already powering the Base2XL.");
+      } else {
+        world.Print("The Base2XL is permanently connected to the battery of "
+            + "the Eliza. However, it is still attached to the Eliza, so "
+            + "it is not yet doing much.");
+      }
+      return true;
+    }
+    if (onWhat == null) {
+      world.Print("What do you want to connect the battery to?");
+      return true;
+    }
+    world.Print("Hmm, I don't see the point of that.");
     return true;
   },
   HandleAction: function(world, parsed) {
     if (parsed.Match(
-            {verb: /connect/, entities: [this, murd.GARBAGE_ROBOT]})) {
+            {verb: /connect|plug/, entities: [this, murd.GARBAGE_ROBOT]})) {
       murd.JUNKARDIA_SHIP_BATTERY.Use(world, murd.GARBAGE_ROBOT);
       return true;
     }
+    if (parsed.Match(
+            {verb: /connect|plug/, entities: [this, murd.DEFENSE_TURRET]})) {
+      murd.JUNKARDIA_SHIP_BATTERY.Use(world, murd.DEFENSE_TURRET);
+      return true;
+    }
+    if (parsed.Match({verb: /connect|plug/})) {
+      murd.JUNKARDIA_SHIP_BATTERY.Use(world, null);
+      return true;
+    }
+    return false;
   }
 });
 
@@ -1265,18 +1469,26 @@ murd.DEFENSE_TURRET = MakeFixedObject({
     murd.JUNKARDIA.turret_has_been_active = true;
     world.Print(
         "You walk over to the side of the ship and detach the Base2XL from it. "
-        + "You wheel it down over the pile of garbage a few steps away from "
+        + (murd.JUNKARDIA_BIRD.location == murd.JUNKARDIA_SHIP
+               ? "The bird that was standing on the ship flies away. "
+               : "")
+        + "You wheel the Base2XL down over the pile of garbage a few steps "
+        + "away from "
         + "the ship. A cable connects it to the ship. You press the Activate "
         + "button on it. It rights itself and a large antena comes out and "
         + "starts spinning around, scanning the territory for hostile "
         + "activity."
         + (murd.CONTROL_ROOM.music_playing ? " You feel safer!" : ""));
+    if (murd.JUNKARDIA_BIRD.location == murd.JUNKARDIA_SHIP) {
+      murd.JUNKARDIA_BIRD.SwitchLocation();
+    }
     return true;
   },
   HandleAction: function(world, parsed) {
     if (parsed.MatchAny([
             {verb: /turn/, entities: [this], modifiers: [/on/]},
-            {verb: /activate/, entities: [this]}])) {
+            {verb: /activate|enable|detach/, entities: [this]},
+            {verb: /detach/, entities: [this, murd.JUNKARDIA_SHIP]}])) {
       this.Use(world, null);
       return true;
     }
@@ -1348,6 +1560,10 @@ murd.Game.prototype.HandleAction = function(world, parsed) {
     world.Print("I'm not hungry.");
     return true;
   }
+  if (parsed.Match({verb: /poop|shit|pee|masturbate/})) {
+    world.Print("You don't really feel like it.");
+    return true;
+  }
   if (parsed.Match({verb: /wait/})) {
     world.Print("You wait for a few seconds. Waiting is boring!");
     return true;
@@ -1358,6 +1574,10 @@ murd.Game.prototype.HandleAction = function(world, parsed) {
   }
   if (parsed.Match({verb: /think/})) {
     world.Print("You think some happy thoughts about New Brasilia.");
+    return true;
+  }
+  if (parsed.Match({verb: /caw/})) {
+    world.Print("I'm not a bird!");
     return true;
   }
   if (parsed.Match({verb: /breath/})) {
