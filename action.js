@@ -154,6 +154,7 @@ engine.ActionParser.prototype.PREPOSITIONS = [
   'into',
   'on',
   'off',
+  'to',
   'around',
   'up',
   'down',

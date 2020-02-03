@@ -27,6 +27,12 @@ function Awesome() {
   return value.charAt(0).toUpperCase() + value.substring(1);
 }
 
+function IsStandUp(parsed) {
+  return parsed.MatchAny([
+             {verb: /stand/},
+             {verb: /stand/, modifiers: [/up/]}]);
+}
+
 function describeContentsWithSkip(world, objects) {
   var out = [];
   for (var i in objects) {
@@ -101,9 +107,7 @@ murd.CONTROL_ROOM = engine.MakeRoom({
       }
       return true;
     }
-    if (parsed.MatchAny([
-            {verb: /stand/},
-            {verb: /stand/, modifiers: [/up/]}])) {
+    if (IsStandUp(parsed)) {
       if (this.sitting) {
         world.Print("You stand up and stretch your legs.");
         this.sitting = false;
@@ -123,8 +127,9 @@ murd.CONTROL_ROOM = engine.MakeRoom({
       return true;
     }
     if (parsed.MatchAny([
-            {verb: /go/, entities: [murd.CONTROL_ROOM_JUNKARDIA]},
-            {verb: /go/, entities: [], modifiers: [/out/]}])) {
+            {verb: /go|enter/, entities: [murd.CONTROL_ROOM_JUNKARDIA]},
+            {verb: /go/, entities: [], modifiers: [/out/]},
+            {verb: /exit|leave/}])) {
       world.Enter(murd.JUNKARDIA);
       return true;
     }
@@ -136,6 +141,10 @@ murd.CONTROL_ROOM = engine.MakeRoom({
       (this.music_playing ? murd.CONTROL_ROOM_SPEAKERS
                           : murd.CONTROL_ROOM_POSTER)
           .Use(world, null);
+      return true;
+    }
+    if (parsed.Match({verb: /smile/})) {
+      world.Print("You smile into the void.");
       return true;
     }
     return false;
@@ -151,6 +160,7 @@ murd.CONTROL_ROOM = engine.MakeRoom({
           + "there.");
       return false;
     }
+    murd.CONTROL_ROOM.sitting = false;
     return true;
   },
   Exits: function(world) {
@@ -176,19 +186,55 @@ murd.JUNKARDIA = engine.MakeRoom({
         + (this.turret_active
                ? ("The Base2XL is standing next to your ship, scanning the "
                   + "territory for hostile activity.")
-               : ("It might get dark pretty soon, so you should take out the "
-                  + "Base2XL out of the ship and activate it; who knows what "
+               : ("It might get dark pretty soon, so you should detach the "
+                  + "Base2XL of the ship and activate it; who knows what "
                   + "monsters you'll encounter here!"));
   },
   DescribeContents: describeContentsWithSkip,
   HandleAction: function(world, parsed) {
+    if (parsed.Match({verb: /sit/})) {
+      world.Print("No way I'm sitting here, among all this garbage!");
+      return true;
+    }
+    if (IsStandUp(parsed)) {
+      world.Print("You are already standing.");
+      return true;
+    }
+    if (parsed.Match({verb: /listen/})) {
+      var items = ["the sound of the wind"];
+      if (this.turret_active) {
+        items.push("a clicking noise that the Base2XL makes occasionally");
+      }
+      if (murd.CONTROL_ROOM.music_playing) {
+        items.push("the " + awesome()
+                   + " rock music coming out of your headphones");
+      }
+      if (this.robot_on) {
+        items.push("some of the machinery on the robot");
+      }
+      if (items.length == 1) {
+        world.Print("The only thing you hear is " + items[0] + ".");
+      } else {
+        var lastItem = items.pop();
+        world.Print("You can hear " + items.join(", ") + ", and " + lastItem
+                    + ".");
+      }
+      return true;
+    }
+    if (parsed.Match({verb: /smile/})) {
+      world.Print(this.robot_on
+                      ? "You smile. The robot smiles back."
+                      : "You smile into the void.");
+      return true;
+    }
+    return false;
   },
   CanLeave: function(world, toRoom) {
     return false;
   },
   CanEnter: function(world) {
     world.Print(
-        "You step out of the space ship into Junkardia."
+        "You open the door of the Eliza and step out into Junkardia."
         + (this.visited
                ? ""
                : " Looks like your ship landed on top of a pile of garbage. "
@@ -197,11 +243,7 @@ murd.JUNKARDIA = engine.MakeRoom({
     return true;
   },
   Exits: function(world) {
-    var output = [];
-    if (this.landed) {
-      output = [engine.MakeExit({TO: murd.CONTROL_ROOM})];
-    }
-    return output;
+    return [engine.MakeExit({TO: murd.CONTROL_ROOM})];
   }
 });
 
@@ -320,6 +362,34 @@ murd.CONTROL_ROOM_CONTROLS = MakeFixedObject({
       return true;
     }
   }
+});
+
+murd.CONTROL_ROOM_HANDS = MakeFixedObject({
+  NAME: "hands",
+  TITLE: "your hands",
+  ALIASES: ["hand", "palm", "palms"],
+  INITIAL_LOCATION: murd.CONTROL_ROOM,
+  Detail: function(world) {
+    return "Your hands are a bit dirty with some oil. You wipe them in the "
+        + "fabric of your "
+        + (murd.CONTROL_ROOM_SPACE_SUIT.location == world.INVENTORY
+               ? "space suit" : "uniform")
+        + ".";
+  },
+  Use: function(world, onWhat) {
+    if (onWhat == null) {
+      world.Print("On what?");
+    } else if (onWhat == murd.CONTROL_ROOM_CONTROLS
+               || onWhat == murd.CONTROL_ROOM_LAND_BUTTON) {
+      onWhat.Use(world, onWhat);
+    } else if (onWhat == murd.CONTROL_ROOM_WINDOW) {
+      world.Print("You do your best to clean some of the oil away from the "
+          + "window.");
+    } else {
+      world.Print("Hmm, no.");
+    }
+    return true;
+  },
 });
 
 murd.CONTROL_ROOM_WALL = MakeFixedObject({
@@ -513,7 +583,9 @@ murd.CONTROL_ROOM_MUSIC = MakeFixedObject({
     murd.CONTROL_ROOM_SPEAKERS.Use(world, onWhat);
   },
   HandleAction: function(world, parsed) {
-    if (parsed.Match({verb: /turn/, entities: [this], modifiers: [/on/]})) {
+    if (parsed.MatchAny([
+            {verb: /turn/, entities: [this], modifiers: [/on/]},
+            {verb: /play/, entities: [this]}])) {
       if (murd.CONTROL_ROOM.music_playing) {
         world.Print("The music is already playing.");
       } else {
@@ -614,6 +686,19 @@ murd.CONTROL_ROOM_CEILING = MakeFixedObject({
   }
 });
 
+murd.CONTROL_ROOM_STAINS = MakeFixedObject({
+  NAME: "Junkardia",
+  TITLE: "stains on the ceiling",
+  INITIAL_LOCATION: murd.CONTROL_ROOM,
+  Detail: function(world) {
+    return "You see some unremarkable stains on the ceiling, making you wish "
+        + "you had some time to clean up a bit.";
+  },
+  Use: function(world, onWhat) {
+    world.Print("You have no use for the stains.");
+  },
+});
+
 murd.CONTROL_ROOM_CLOSET = MakeFixedObject({
   NAME: "closet",
   TITLE: "the closet",
@@ -626,6 +711,12 @@ murd.CONTROL_ROOM_CLOSET = MakeFixedObject({
     world.Print("You have no use for the closet.");
   },
 });
+
+function IsWearCommand(parsed, entity) {
+  return parsed.MatchAny([
+            {verb: /wear/, entities: [entity]},
+            {verb: /put/, entities: [entity], modifiers: [/on/]}]);
+}
 
 function MakeClothes(data) {
   data["Use"] = function(world, onWhat) {
@@ -643,9 +734,7 @@ function MakeClothes(data) {
       world.Print("You dust it off a bit, but it doesn't seem to do much.");
       return true;
     }
-    if (parsed.MatchAny([
-            {verb: /wear/, entities: [this]},
-            {verb: /put/, entities: [this], modifiers: [/on/]}])) {
+    if (IsWearCommand(parsed, this)) {
       this.Use(world, null);
       return true;
     }
@@ -684,13 +773,16 @@ murd.CONTROL_ROOM_SPACE_SUIT = MakeClothes({
       return false;
     }
     world.Print(
-        "You put the space suit on. It fits a bit tight."
+        (murd.CONTROL_ROOM.sitting ? "You stand up," : "You")
+        + " walk to the closet, take your space suit out, and put it on. "
+        + "It fits a bit tight."
         + (murd.CONTROL_ROOM.music_playing
                ? " This " + awesome()
                  + " space suit is one of your most prized posessions!"
                  + " The old earth rock plays through the headphones."
                : "")
         + " You stow your uniform in the closet.");
+    murd.CONTROL_ROOM.sitting = false;
     murd.CONTROL_ROOM_CLOSET.Add(murd.CONTROL_ROOM_SPACE_UNIFORM);
     return true;
   },
@@ -722,7 +814,32 @@ murd.CONTROL_ROOM_SPACE_UNIFORM = MakeClothes({
                ? " Your " + awesome() + " uniform is quite comfortable."
                : ""));
     murd.CONTROL_ROOM_CLOSET.Add(murd.CONTROL_ROOM_SPACE_SUIT);
+    murd.CONTROL_ROOM.sitting = false;
     return true;
+  },
+});
+
+murd.CONTROL_ROOM_DOOR = MakeFixedObject({
+  NAME: "door",
+  TITLE: "your uniform",
+  ALIASES: ["hatch"],
+  INITIAL_LOCATION: engine.INVENTORY,
+  Detail: function(world) {
+    return "The control room has a door that can be activated in order to exit "
+        + "the Eliza."
+        + (murd.CONTROL_ROOM.landed
+               ? ""
+               : " Of course, we should probably land first.");
+  },
+  Use: function(world, onWhat) {
+    world.Enter(murd.JUNKARDIA);
+    return true;
+  },
+  HandleAction: function(world, parsed) {
+    if (parsed.MatchAny([{verb: /open/, entities: [this]}])) {
+      return this.Use(world, null);
+    }
+    return false;
   },
 });
 
@@ -754,17 +871,29 @@ murd.GARBAGE_ROBOT = MakeObject({
                ? " It also looks kind of " + awesome() + ", in a strange way."
                : "")
         + (murd.JUNKARDIA.robot_on
-           ? ""
+           ? " It seems to want to say something."
            : (murd.JUNKARDIA.robot_powered
                  ? (" The robot is currently plugged in to the Eliza's main "
                     + "battery.")
                  : " Who knows if it can be powered on?"));
   },
   CanGet: function(world) {
-    world.Print("You try to lift it but it's very heavy. You give up.");
+    world.Print("You try to lift it but it's very heavy."
+        + (murd.JUNKARDIA.robot_on
+               ? "\"What are you doing?\" he says, confused. "
+               : "")
+        + "You give up.");
     return false;
   },
-  Use: function(world, onWhat) {
+  Use:function(world, onWhat) {
+    if (!murd.JUNKARDIA.robot_on) {
+      this.TurnOn(world);
+      return true;
+    }
+    world.Print("I have no use for the robot.");
+    return true;
+  },
+  TurnOn: function(world) {
     if (!murd.JUNKARDIA.robot_powered) {
       world.Print("You try to turn it on, but ... the robot is out of battery. "
           + "Maybe connect it to ship's battery?");
@@ -774,25 +903,54 @@ murd.GARBAGE_ROBOT = MakeObject({
       world.Print("No way I'll power it on before I activate the Base2XL!");
       return true;
     }
+    if (murd.JUNKARDIA.robot_on) {
+      world.Print("The robot is already on!");
+      return true;
+    }
     world.Print(
         "You press the ON switch on the robot. Its head turns towards you and "
-        + "its electric eyes make a metalic noise. \"Hello,\", it says, with "
-        + "a metalic voice. \"I have a terrible headache.\"");
+        + "its electric eyes make a metallic noise. \"Hello,\" it says, "
+        + "almost inaudibly. \"I have a terrible headache.\"");
     murd.JUNKARDIA.robot_on = true;
-    world.Print("YOU HAVE WON!!!!");
     return true;
+  },
+  TurnOff: function(world) {
+    world.Print(
+        murd.JUNKARDIA.robot_on
+            ? "That would be very rude!"
+            : "The robot is not currently on.");
   },
   HandleAction: function(world, parsed) {
     if (parsed.MatchAny([
             {verb: /activate/, entities: [this]},
             {verb: /turn/, entities: [this], modifiers: [/on/]},
             {verb: /power/, entities: [this], modifiers: [/on/]},])) {
-      this.Use(world, null);
+      this.TurnOn(world);
       return true;
     }
-    if (parsed.Match(
-            {verb: /connect/, entities: [this, murd.JUNKARDIA_SHIP_BATTERY]})) {
+    if (parsed.MatchAny([
+            {verb: /disactivate/, entities: [this]},
+            {verb: /turn/, entities: [this], modifiers: [/off/]},
+            {verb: /power/, entities: [this], modifiers: [/off/]},])) {
+      this.TurnOff(world);
+      return true;
+    }
+    if (parsed.MatchAny([
+            {verb: /connect|plug/,
+             entities: [this, murd.JUNKARDIA_SHIP_BATTERY]}])) {
       murd.JUNKARDIA_SHIP_BATTERY.Use(world, this);
+      return true;
+    }
+    if (parsed.MatchAny([{verb: /talk/, entities: [this]}])) {
+      if (murd.JUNKARDIA.robot_on) {
+        world.Print("The robot smiles. \"Hello, human,\" he says. \"Guess "
+            + "what?\"");
+        world.Print("\"YOU HAVE WON!!!!!\""
+            + (murd.CONTROL_ROOM.music_playing ? Awesome() + "!!!1" : ""));
+      } else {
+        world.Print("\"Hello, Robot\", you say. The robot doesn't respond. "
+            + "This is probably because ... well, you haven't turned it on.");
+      }
       return true;
     }
   },
@@ -832,7 +990,22 @@ murd.GARBAGE_SNOWBOARD = MakeObject({
   Use: function(world, onWhat) {
     world.Print("Nah. There's no snow here and ... it's quite broken anyway.");
     return true;
-  }
+  },
+  HandleAction: function(world, parsed) {
+    if (parsed.Match({verb:/ride/, entities: [this]})) {
+      this.Use(world, null);
+      return true;
+    }
+    if (parsed.Match({verb:/break/, entities: [this]})) {
+      world.Print("It's already broken.");
+      return true;
+    }
+    if (parsed.Match({verb:/repair|fix|mend/, entities: [this]})) {
+      world.Print("I don't have the time nor the tools to fix the snowboard.");
+      return true;
+    }
+    return false;
+  },
 });
 
 murd.GARBAGE_NEWSPAPER = MakeObject({
@@ -840,8 +1013,9 @@ murd.GARBAGE_NEWSPAPER = MakeObject({
   TITLE: "fragments of an old newspaper",
   INITIAL_LOCATION: murd.GARBAGE,
   Detail: function(world) {
-    return "You take a look. It's twenty-seven years old and talks about "
-        + "politicians of yore.";
+    return "You take a look. The newspaper is written in some dialect of "
+        + "English that you can somewhat understand. It is twenty-seven years "
+        + "old and mentions politicians of yore.";
   },
   Use: function(world, onWhat) {
     world.Print(
@@ -850,6 +1024,13 @@ murd.GARBAGE_NEWSPAPER = MakeObject({
         + "heard of.");
     return true;
   },
+  HandleAction: function(world, parsed) {
+    if (parsed.Match({verb:/read/, entities: [this]})) {
+      this.Use(world, null);
+      return true;
+    }
+    return false;
+  },
 });
 
 murd.GARBAGE_BOTTLE = MakeObject({
@@ -857,16 +1038,60 @@ murd.GARBAGE_BOTTLE = MakeObject({
   TITLE: "an empty bottle",
   INITIAL_LOCATION: murd.GARBAGE,
   Detail: function(world) {
-    return "It's an empty bottle of wine. It isn't broken, but the label has "
-        + "mostly rotten away.";
+    return "It's an empty bottle of wine. Remarkably, it isn't broken.";
   },
   Use: function(world, onWhat) {
     world.Print("You have no use for the bottle.");
     return true;
   },
+  HandleAction: function(world, parsed) {
+    if (parsed.Match({verb:/break|throw/, entities: [this]})) {
+      world.Print(
+          (this.location == world.INVENTORY
+               ? "You throw the bottle"
+               : "You lift the bottle and throw it")
+          + " against the ground as hard as you can but ... it doesn't break.");
+      murd.GARBAGE.Add(this);
+      return true;
+    }
+    if (parsed.Match({verb:/fill/, entities: [this]})) {
+      world.Print("There's nothing to fill it with.");
+      return true;
+    }
+    return false;
+  },
 });
 
-murd.GARBAGE_BOTTLE = MakeObject({
+murd.GARBAGE_BOTTLE_LABEL = MakeObject({
+  NAME: "label",
+  TITLE: "the wine label",
+  // TODO: Remove 'wine'.
+  ALIASES: ["wine", "wine label"],
+  INITIAL_LOCATION: murd.GARBAGE_BOTTLE,
+  Detail: function(world) {
+    return "The wine label has mostly rotten away. It has some writing that "
+        + "may be in the alphabet of the Bora society.";
+  },
+  Use: function(world, onWhat) {
+    world.Print("You have no use for the bottle's label.");
+    return true;
+  },
+  HandleAction: function(world, parsed) {
+    if (parsed.Match({verb:/peel/, entities: [this], modifiers: [/off/]})) {
+      world.Print("You peel the label of the bottle off.");
+      world.INVENTORY.Add(this);
+      return true;
+    }
+    if (parsed.Match({verb:/read/, entities: [this]})) {
+      world.Print("You can't read this alphabet. If you had to guess, you'd "
+          + "say it's probably the writing of the Bora society.");
+      return true;
+    }
+    return false;
+  },
+});
+
+murd.GARBAGE_TSHIRT = MakeObject({
   NAME: "tshirt",
   TITLE: "an old tshirt",
   INITIAL_LOCATION: murd.GARBAGE,
@@ -878,12 +1103,72 @@ murd.GARBAGE_BOTTLE = MakeObject({
     return true;
   },
   CanGet: function(world) {
-    world.Print("I'd rather not touch it, it's quite dirty.");
+    world.Print("I'd rather not touch it, it's quite dirty, with the worm and "
+        + "all.");
+    return false;
+  },
+  HandleAction: function(world, parsed) {
+    if (IsWearCommand(parsed, this)) {
+      this.Use(world, null);
+      return true;
+    }
+    if (parsed.Match({verb: /clean/, entities: [this]})) {
+      world.Print("What for? Nah; I'd rather not touch it.");
+      return true;
+    }
     return false;
   },
 });
 
-murd.JUNKARDIA_SHIP = MakeObject({
+murd.GARBAGE_WORM = MakeObject({
+  NAME: "worm",
+  TITLE: "a green hairy worm",
+  INITIAL_LOCATION: murd.GARBAGE_TSHIRT,
+  Detail: function(world) {
+    return "The green worm is about as big as a banana and it's very "
+        + "hairy. It has two long antenas. It's munching on the tshirt."
+        + (murd.CONTROL_ROOM.music_playing ? " It looks disgusting!" : "");
+  },
+  Use: function(world, onWhat) {
+    world.Print("Uh, I have no use for the worm.");
+    return true;
+  },
+  CanGet: function(world) {
+    world.Print("I'd rather not touch it, it might be poisonous.");
+    return false;
+  },
+  HandleAction: function(world, parsed) {
+    if (parsed.Match({verb: /eat|lick|consume|bite/, entities: [this]})) {
+      world.Print("No way, I bet it's poisonous.");
+      return true;
+    }
+    if (parsed.Match({verb: /attack|kill|cut|squash|squish|destroy|hurt/,
+                      entities: [this]})) {
+      world.Print("Whoah, no... I'd rather just let it be.");
+      return true;
+    }
+    return false;
+  },
+});
+
+murd.GARBAGE_WORM_ANTENAS = MakeFixedObject({
+  NAME: "antenas",
+  TITLE: "the antenas on the worm",
+  INITIAL_LOCATION: murd.GARBAGE_WORM,
+  Detail: function(world) {
+    return "The two antenas don't seem particularly remarkable.";
+  },
+  Use: function(world, onWhat) {
+    world.Print("Uh, I have no use for the worm's antenas.");
+    return true;
+  },
+  CanGet: function(world) {
+    world.Print("I'd rather not touch them, the worm might be poisonous.");
+    return false;
+  },
+});
+
+murd.JUNKARDIA_SHIP = MakeFixedObject({
   NAME: "ship",
   TITLE: "the Eliza",
   ALIASES: ["eliza"],
@@ -927,6 +1212,11 @@ murd.JUNKARDIA_SHIP_BATTERY = MakeFixedObject({
   },
   Use: function(world, onWhat) {
     if (onWhat == murd.GARBAGE_ROBOT) {
+      if (murd.JUNKARDIA.robot_powered) {
+        world.Print("The robot is already connected to the main battery of "
+            + "the Eliza.");
+        return true;
+      }
       world.Print(
           "You take out a cable and connect the main battery of the Eliza to "
           + "the robot. Its eyes blink briefly in a light blue light.");
@@ -993,6 +1283,25 @@ murd.DEFENSE_TURRET = MakeFixedObject({
   },
 });
 
+murd.MONSTERS = MakeFixedObject({
+  NAME: "monsters",
+  TITLE: "monsters",
+  INITIAL_LOCATION: murd.JUNKARDIA,
+  Detail: function(world) {
+    return "There are no monsters here."
+        + (murd.CONTROL_ROOM.music_playing ? " Luckily!" : "")
+        + (murd.JUNKARDIA.turret_active
+               ? (" If there were, I'm sure the Base2XL would take care of "
+                  + "them"
+                  + (murd.CONTROL_ROOM.music_playing ? " easy peasy!" : "."))
+               : " I guess I should activate the Base2XL in case some come.");
+  },
+  Use: function(world, onWhat) {
+    world.Print("There are no monsters here.");
+    return true;
+  },
+});
+
 // End of objects
 
 murd.Game.prototype.InitState = function(world) {
@@ -1000,11 +1309,6 @@ murd.Game.prototype.InitState = function(world) {
 };
 
 murd.Game.prototype.HandleAction = function(world, parsed) {
-  if (murd.CONTROL_ROOM_SPACE_UNIFORM.location != world.INVENTORY &&
-      murd.CONTROL_ROOM_SPACE_UNIFORM.location !=
-          murd.CONTROL_ROOM_SPACE_CLOSET) {
-    // world.INVENTORY.Add(murd.CONTROL_ROOM_SPACE_UNIFORM);
-  }
   if (parsed.verb == "") {
     world.Print("What do you want to do?");
     return true;
@@ -1034,6 +1338,34 @@ murd.Game.prototype.HandleAction = function(world, parsed) {
       world.Print(
           "How did you manage to be in Junkardia wearing your uniform?");
     }
+    return true;
+  }
+  if (parsed.Match({verb: /drink/})) {
+    world.Print("I'm not thirsty.");
+    return true;
+  }
+  if (parsed.Match({verb: /cook|eat/})) {
+    world.Print("I'm not hungry.");
+    return true;
+  }
+  if (parsed.Match({verb: /wait/})) {
+    world.Print("You wait for a few seconds. Waiting is boring!");
+    return true;
+  }
+  if (parsed.Match({verb: /sleep|rest/})) {
+    world.Print("You aren't tired.");
+    return true;
+  }
+  if (parsed.Match({verb: /think/})) {
+    world.Print("You think some happy thoughts about New Brasilia.");
+    return true;
+  }
+  if (parsed.Match({verb: /breath/})) {
+    world.Print("You take a deep breath."
+        + (murd.CONTROL_ROOM_SPACE_SUIT.location == world.INVENTORY
+               ? (" The air coming out of your space suit is cool and "
+                  + "refreshing.")
+               : ""));
     return true;
   }
   return false;
