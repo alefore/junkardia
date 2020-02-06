@@ -22,6 +22,22 @@ function awesome() {
       "aewsome", "awesoem", "awseome", "aweosme", "awosome", "aweomse"]);
 }
 
+function zaap() {
+  return pickRandomMessage([
+      "Zaap", "Zaap", "Zaap", "Zaaap", "Zaaap", "Zaaaap", "Zaaaap",
+      "Zaaaaaaaaaaaaaap"])
+      + pickRandomMessage([".", ".", ".", "!", "!", "!!", "!!!!!!"]);
+}
+
+function describeRay() {
+  return pickRandomMessage(["nice", "shinny", "scary", awesome()])
+      + " "
+      + pickRandomMessage(["ray", "blast", "beam"])
+      + " of "
+      + pickRandomMessage(["red", "yellow", "blue", "green", "silver"])
+      + " light"
+}
+
 function Awesome() {
   var value = awesome();
   return value.charAt(0).toUpperCase() + value.substring(1);
@@ -171,6 +187,7 @@ murd.CONTROL_ROOM = engine.MakeRoom({
           + "there.");
       return false;
     }
+    murd.CONTROL_ROOM_BEAR.DropIfHeld(world);
     murd.CONTROL_ROOM.sitting = false;
     return true;
   },
@@ -247,11 +264,8 @@ murd.JUNKARDIA = engine.MakeRoom({
   },
   Shoot: function(world, onWhat) {
     if (onWhat == null) {
-      return "You shoot at the air. The blaster sends a "
-          + pickRandomMessage(["nice", "shinny", "scary", awesome()])
-          + " ray of "
-          + pickRandomMessage(["red", "yellow", "blue", "green", "silver"])
-          + " light."
+      return zaap() + " You shoot at the air. The blaster sends a "
+          describeRay() + "."
           + (murd.CONTROL_ROOM.music_playing ? " " + Awesome() + "." : "");
     }
     return "I'd rather not.";
@@ -739,6 +753,28 @@ murd.CONTROL_ROOM_CLOSET = MakeFixedObject({
   },
 });
 
+murd.CONTROL_ROOM_BEAR = MakeObject({
+  NAME: "teddy bear",
+  TITLE: "your teddy bear Arnold",
+  ALIASES: ["bear", "teddy", "arnold"],
+  INITIAL_LOCATION: murd.CONTROL_ROOM_CLOSET,
+  Detail: function(world) {
+    return "This is Arnold, your teddy bear. It reminds you of New Brasilia, "
+        + "where you got it when you were little. It's now a bit worn out but "
+        + "it's still very special: it's your lucky charm.";
+  },
+  Use: function(world, onWhat) {
+    world.Print("You give the teddy bear a hug.");
+  },
+  DropIfHeld: function(world) {
+    if (this.location == world.INVENTORY) {
+      world.Print(
+          "You stow Arnold back in the closet; no use bringing it out.");
+      murd.CONTROL_ROOM_CLOSET.Add(this);
+    }
+  }
+});
+
 murd.GUN = MakeObject({
   NAME: "blaster",
   TITLE: "a blaster",
@@ -946,9 +982,9 @@ murd.JUNKARDIA_TREE = MakeObject({
     return false;
   },
   Shoot: function(world) {
-    return "You shoot at the tree. Zaaap!"
+    return "You shoot " + describeRay() + " at the tree. " + zaap()
          + (murd.JUNKARDIA_BIRD.location == this
-                ? "The black bird caws." : "");
+                ? " The black bird caws." : "");
   },
 });
 
@@ -977,7 +1013,8 @@ murd.JUNKARDIA_BIRD = MakeFixedObject({
         + " looking at " + looking + ".");
   },
   Shoot: function(world) {
-    return "You shoot a blast at the black bird, but miss "
+    return zaap() + " You shoot " + describeRay()
+        + " at the black bird, but miss "
         + pickRandomMessage(["hopelessly", "by a mile", "by a lot"])
         + "."
         + (this.location == murd.JUNKARDIA_SHIP
@@ -1032,8 +1069,8 @@ murd.GARBAGE = MakeFixedObject({
     return false;
   },
   Shoot: function(world) {
-    return "You shoot a blast at the pile of garbage. Nothing interesting "
-        + "happens.";
+    return zaap() + " You shoot " + describeRay() + " at the pile of garbage. "
+        + "Nothing interesting happens.";
   },
 });
 
@@ -1049,7 +1086,7 @@ murd.GARBAGE_BRICK = MakeObject({
     return false;
   },
   Shoot: function(world) {
-    return "You shoot a blast at the brick.";
+    return zaap() + " You shoot " + describeRay() + " at the brick.";
   },
   Use: function(world, onWhat) {
     if (onWhat == murd.GARBAGE_BOTTLE) {
@@ -1253,7 +1290,7 @@ murd.GARBAGE_SNOWBOARD = MakeObject({
     return false;
   },
   Shoot: function(world) {
-    return "Zaaaap! Nothing seems to have happened.";
+    return zaap() + " Nothing seems to have happened.";
   },
 });
 
@@ -1285,7 +1322,7 @@ murd.GARBAGE_NEWSPAPER = MakeObject({
     if (murd.GARBAGE_ASHES.location != murd.GARBAGE) {
       murd.GARBAGE.Add(murd.GARBAGE_ASHES);
     }
-    return "Zaaaap! The newspaper burns to ashes.";
+    return zaap() + " The newspaper burns to ashes.";
   }
 });
 
@@ -1309,7 +1346,7 @@ murd.GARBAGE_ASHES = MakeObject({
     return false;
   },
   Shoot: function(world) {
-    return "Zaaaap! Nothing happens.";
+    return zaap() + " Nothing happens.";
   },
   CanGet: function(world) {
     world.Print("Hmm, I have no use for the ashes.");
@@ -1345,7 +1382,8 @@ murd.GARBAGE_BOTTLE = MakeObject({
     return false;
   },
   Shoot: function(world) {
-    var description = "Zaaaap! You shoot the bottle.";
+    var description = zaap() + " You shoot " + describeRay()
+        + " at the bottle.";
     world.Destroy(murd.GARBAGE_BOTTLE_LABEL);
     if (murd.GARBAGE_ASHES.location != murd.GARBAGE) {
       murd.GARBAGE.Add(murd.GARBAGE_ASHES);
@@ -1409,7 +1447,7 @@ murd.GARBAGE_BOTTLE_GLASS = MakeObject({
     return false;
   },
   Shoot: function(world) {
-    return "Zaaap! Nothing happens.";
+    return zaap() + " Nothing happens.";
   },
 });
 
@@ -1441,7 +1479,7 @@ murd.GARBAGE_TSHIRT = MakeObject({
     return false;
   },
   Shoot: function(world) {
-    return "Zaaap!! Nothing happens.";
+    return zaap() + " Nothing happens.";
   },
 });
 
