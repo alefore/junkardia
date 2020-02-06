@@ -157,6 +157,9 @@ murd.CONTROL_ROOM = engine.MakeRoom({
     }
     return false;
   },
+  Shoot: function(world, onWhat) {
+    return "Shoot inside my own space ship? That'd be crazy!";
+  },
   CanLeave: function(world, toRoom) {
     if (!this.landed) {
       world.Print("You need to land your ship first.");
@@ -241,6 +244,17 @@ murd.JUNKARDIA = engine.MakeRoom({
       return true;
     }
     return false;
+  },
+  Shoot: function(world, onWhat) {
+    if (onWhat == null) {
+      return "You shoot at the air. The blaster sends a "
+          + pickRandomMessage(["nice", "shinny", "scary", awesome()])
+          + " ray of "
+          + pickRandomMessage(["red", "yellow", "blue", "green", "silver"])
+          + " light."
+          + (murd.CONTROL_ROOM.music_playing ? " " + Awesome() + "." : "");
+    }
+    return "I'd rather not.";
   },
   CanLeave: function(world, toRoom) {
     return false;
@@ -725,6 +739,53 @@ murd.CONTROL_ROOM_CLOSET = MakeFixedObject({
   },
 });
 
+murd.GUN = MakeObject({
+  NAME: "blaster",
+  TITLE: "a blaster",
+  INITIAL_LOCATION: murd.CONTROL_ROOM_CLOSET,
+  ALIASES: ["gun"],
+  Detail: function(world) {
+    return "The blaster is my favorite weapon: a nice lightweight gun that "
+        + "doesn't encumber me much but gives me a nice feeling of safety. "
+        + "It shoots nice colorful rays that will stun my enemies. "
+        + "I bought it in a flea market in the dunes of Sev Alman. "
+        + (murd.CONTROL_ROOM.music_playing
+               ? "I'm ready to use it if anyone messes with me!"
+               : "I hope I'll never actually have to use it.");
+  },
+  Use: function(world, onWhat) {
+    if (onWhat != null && "Shoot" in onWhat) {
+      world.Print(onWhat.Shoot(world));
+      return true;
+    } else if ("Shoot" in world.location) {
+      world.Print(world.location.Shoot(world, onWhat == this ? null : onWhat));
+      return true;
+    }
+    world.Print("I'd rather not.");
+    return true;
+  },
+  HandleAction: function(world, parsed) {
+    // TODO: Doesn't seem to work.
+    if (parsed.MatchAny([
+            {verb: /shoot|fire|blast/, entities: [this, engine.ANY_OBJECT],
+             modifiers: ["", /at/]}])) {
+      return this.Use(world, parsed.entities[1]);
+    }
+    if (parsed.MatchAny([{verb: /shoot|fire|blast/, entities: [this]}])) {
+      return this.Use(world, null);
+    }
+    return false;
+  },
+  CanGet: function(world) {
+    if (!murd.CONTROL_ROOM.landed) {
+      world.Print("I think I should focus on landing the Eliza first.");
+      return false;
+    }
+    world.Print("Yeah! I feel safer already.");
+    return true;
+  }
+});
+
 function IsWearCommand(parsed, entity) {
   return parsed.MatchAny([
             {verb: /wear/, entities: [entity]},
@@ -884,6 +945,11 @@ murd.JUNKARDIA_TREE = MakeObject({
     }
     return false;
   },
+  Shoot: function(world) {
+    return "You shoot at the tree. Zaaap!"
+         + (murd.JUNKARDIA_BIRD.location == this
+                ? "The black bird caws." : "");
+  },
 });
 
 murd.JUNKARDIA_BIRD = MakeFixedObject({
@@ -910,6 +976,15 @@ murd.JUNKARDIA_BIRD = MakeFixedObject({
         + "The bird is standing on top of " + this.DescribeLocation()
         + " looking at " + looking + ".");
   },
+  Shoot: function(world) {
+    return "You shoot a blast at the black bird, but miss "
+        + pickRandomMessage(["hopelessly", "by a mile", "by a lot"])
+        + "."
+        + (this.location == murd.JUNKARDIA_SHIP
+               ? " Your ship takes the hit. Oops."
+               : "")
+        + " The bird gives you a funny look.";
+  },
   Use: function(world, onWhat) {
     world.Print("I have no use for the bird right now.");
     return true;
@@ -933,7 +1008,7 @@ murd.JUNKARDIA_BIRD = MakeFixedObject({
       return true;
     }
     if (parsed.Match({verb: /feed/, entities: [this]})) {
-      world.Print("I have nothing to feed the bird.");
+      world.Print("I have nothing to feed the bird with.");
       return true;
     }
     if (parsed.Match({verb: /catch|hunt|capture/, entities: [this]})) {
@@ -956,6 +1031,10 @@ murd.GARBAGE = MakeFixedObject({
     world.Print("What parts of the garbage?");
     return false;
   },
+  Shoot: function(world) {
+    return "You shoot a blast at the pile of garbage. Nothing interesting "
+        + "happens.";
+  },
 });
 
 murd.GARBAGE_BRICK = MakeObject({
@@ -968,6 +1047,9 @@ murd.GARBAGE_BRICK = MakeObject({
   CanGet: function(world) {
     world.Print("It's a bit heavy, I'd rather leave it here.");
     return false;
+  },
+  Shoot: function(world) {
+    return "You shoot a blast at the brick.";
   },
   Use: function(world, onWhat) {
     if (onWhat == murd.GARBAGE_BOTTLE) {
@@ -1076,6 +1158,11 @@ murd.GARBAGE_ROBOT = MakeObject({
             ? "That would be very rude!"
             : "The robot is not currently on.");
   },
+  Shoot: function(world) {
+    return (murd.JUNKARDIA.robot_on
+        ? "I think that would probably upset him. I'd rather not."
+        : "I don't think that's quite the way to turn it on.");
+  },
   HandleAction: function(world, parsed) {
     if (parsed.MatchAny([
             {verb: /activate/, entities: [this]},
@@ -1129,6 +1216,9 @@ murd.GARBAGE_ROBOT_EYES = MakeFixedObject({
     world.DescribeRoom();
     return true;
   },
+  Shoot: function(world) {
+    return murd.JUNKARDIA.GARBAGE_ROBOT.Shoot(world);
+  }
 });
 
 murd.GARBAGE_SNOWBOARD = MakeObject({
@@ -1162,6 +1252,9 @@ murd.GARBAGE_SNOWBOARD = MakeObject({
     }
     return false;
   },
+  Shoot: function(world) {
+    return "Zaaaap! Nothing seems to have happened.";
+  },
 });
 
 murd.GARBAGE_NEWSPAPER = MakeObject({
@@ -1187,6 +1280,41 @@ murd.GARBAGE_NEWSPAPER = MakeObject({
     }
     return false;
   },
+  Shoot: function(world) {
+    world.Destroy(murd.GARBAGE_NEWSPAPER);
+    if (murd.GARBAGE_ASHES.location != murd.GARBAGE) {
+      murd.GARBAGE.Add(murd.GARBAGE_ASHES);
+    }
+    return "Zaaaap! The newspaper burns to ashes.";
+  }
+});
+
+murd.GARBAGE_ASHES = MakeObject({
+  NAME: "ashes",
+  TITLE: "a bunch of ashes",
+  INITIAL_LOCATION: null,
+  Detail: function(world) {
+    return "This is just a bunch of ashes."
+        + (murd.CONTROL_ROOM.music_playing ? " I love my blaster!" : "");
+  },
+  Use: function(world, onWhat) {
+    world.Print("I have no use for the ashes.");
+    return true;
+  },
+  HandleAction: function(world, parsed) {
+    if (parsed.Match({verb:/spread/, entities: [this]})) {
+      world.Print("You spread the ashes somewhat among the pile of garbage.");
+      return true;
+    }
+    return false;
+  },
+  Shoot: function(world) {
+    return "Zaaaap! Nothing happens.";
+  },
+  CanGet: function(world) {
+    world.Print("Hmm, I have no use for the ashes.");
+    return false;
+  }
 });
 
 murd.GARBAGE_BOTTLE = MakeObject({
@@ -1216,6 +1344,18 @@ murd.GARBAGE_BOTTLE = MakeObject({
     }
     return false;
   },
+  Shoot: function(world) {
+    var description = "Zaaaap! You shoot the bottle.";
+    world.Destroy(murd.GARBAGE_BOTTLE_LABEL);
+    if (murd.GARBAGE_ASHES.location != murd.GARBAGE) {
+      murd.GARBAGE.Add(murd.GARBAGE_ASHES);
+      description +=
+          " The label on the bottle burns but the bottle doesn't break.";
+    } else {
+      description += " Nothing happens.";
+    }
+    return description
+  }
 });
 
 murd.GARBAGE_BOTTLE_LABEL = MakeObject({
@@ -1231,6 +1371,9 @@ murd.GARBAGE_BOTTLE_LABEL = MakeObject({
   Use: function(world, onWhat) {
     world.Print("You have no use for the bottle's label.");
     return true;
+  },
+  Shoot: function(world) {
+    return murd.GARBAGE_BOTTLE.Shoot(world);
   },
   HandleAction: function(world, parsed) {
     if (parsed.Match({verb:/peel/, entities: [this], modifiers: [/off/]})) {
@@ -1265,6 +1408,9 @@ murd.GARBAGE_BOTTLE_GLASS = MakeObject({
     world.Print("Hmm, nah, I don't want to do that... I could cut my fingers.");
     return false;
   },
+  Shoot: function(world) {
+    return "Zaaap! Nothing happens.";
+  },
 });
 
 murd.GARBAGE_TSHIRT = MakeObject({
@@ -1294,6 +1440,9 @@ murd.GARBAGE_TSHIRT = MakeObject({
     }
     return false;
   },
+  Shoot: function(world) {
+    return "Zaaap!! Nothing happens.";
+  },
 });
 
 murd.GARBAGE_WORM = MakeObject({
@@ -1314,7 +1463,7 @@ murd.GARBAGE_WORM = MakeObject({
     return false;
   },
   HandleAction: function(world, parsed) {
-    if (parsed.Match({verb: /eat|lick|consume|bite/, entities: [this]})) {
+    if (parsed.Match({verb: /eat|lick|touch|consume|bite/, entities: [this]})) {
       world.Print("No way, I bet it's poisonous.");
       return true;
     }
@@ -1324,6 +1473,9 @@ murd.GARBAGE_WORM = MakeObject({
       return true;
     }
     return false;
+  },
+  Shoot: function(world) {
+    return "Hmm, I think that would be mean, I don't want to kill the worm.";
   },
 });
 
@@ -1342,6 +1494,15 @@ murd.GARBAGE_WORM_ANTENAS = MakeFixedObject({
     world.Print("I'd rather not touch them, the worm might be poisonous.");
     return false;
   },
+  Shoot: function(world) {
+    return murd.GARBAGE_WORM.Shoot(world);
+  },
+  HandleAction: function(world, parsed) {
+    if (parsed.Match({verb: /touch/, entities: [this]})) {
+      world.Print("I'd rather not touch them, the worm might be poisonous.");
+      return true;
+    }
+  }
 });
 
 murd.JUNKARDIA_SHIP = MakeFixedObject({
@@ -1365,6 +1526,9 @@ murd.JUNKARDIA_SHIP = MakeFixedObject({
         + "I've collected some goodies!");
     return true;
   },
+  Shoot: function(world) {
+    return "I don't want to shoot my own ship!";
+  }
 });
 
 murd.JUNKARDIA_SHIP_BATTERY = MakeFixedObject({
@@ -1493,6 +1657,9 @@ murd.DEFENSE_TURRET = MakeFixedObject({
       return true;
     }
   },
+  Shoot: function(world) {
+    return "I don't see a reason to shoot the Base2XL!";
+  }
 });
 
 murd.MONSTERS = MakeFixedObject({
@@ -1512,6 +1679,9 @@ murd.MONSTERS = MakeFixedObject({
     world.Print("There are no monsters here.");
     return true;
   },
+  Shoot: function(world) {
+    return "I don't see any monsters.";
+  }
 });
 
 // End of objects
@@ -1578,6 +1748,36 @@ murd.Game.prototype.HandleAction = function(world, parsed) {
   }
   if (parsed.Match({verb: /caw/})) {
     world.Print("I'm not a bird!");
+    return true;
+  }
+  if (parsed.MatchAny([
+          {verb: /shoot/, entities: []}])) {
+    if (murd.GUN.location == world.INVENTORY) {
+      murd.GUN.Use(world, null);
+    } else {
+      world.Print("With what?");
+    }
+    return true;
+  }
+  if (parsed.MatchAny([
+          {verb: /shoot|fire|blast/, entities: [engine.ANY_OBJECT]}])) {
+    if (murd.GUN.location == world.INVENTORY) {
+      return murd.GUN.Use(world, parsed.entities[0]);
+    } else {
+      world.Print("With what?");
+    }
+    return true;
+  }
+  // TODO: Doesn't work.
+  if (parsed.MatchAny([
+          {verb: /shoot|fire|blast/,
+           entities: [engine.ANY_OBJECT, murd.GUN],
+           modifiers: ["", /with/]}])) {
+    if (murd.GUN.location == world.INVENTORY) {
+      return murd.GUN.Use(world, parsed.entities[0]);
+    } else {
+      world.Print("With what?");
+    }
     return true;
   }
   if (parsed.Match({verb: /breath/})) {
