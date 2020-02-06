@@ -265,7 +265,7 @@ murd.JUNKARDIA = engine.MakeRoom({
   Shoot: function(world, onWhat) {
     if (onWhat == null) {
       return zaap() + " You shoot at the air. The blaster sends a "
-          describeRay() + "."
+          + describeRay() + "."
           + (murd.CONTROL_ROOM.music_playing ? " " + Awesome() + "." : "");
     }
     return "I'd rather not.";
@@ -1793,7 +1793,7 @@ murd.Game.prototype.HandleAction = function(world, parsed) {
     if (murd.GUN.location == world.INVENTORY) {
       murd.GUN.Use(world, null);
     } else {
-      world.Print("With what?");
+      world.Print("I have nothing to shoot with.");
     }
     return true;
   }
